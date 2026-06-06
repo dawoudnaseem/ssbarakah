@@ -386,6 +386,53 @@ All 47 tests still passing.
 - `deleteTask(task, scope)` — optimistic removal, deletes `task_completions` then `daily_tasks`, optionally `recurring_tasks`
 - `TaskRow` gains `onDelete` prop and a red ✕ button (44px tap target) to the left of the complete button
 
+### ✅ Recurring Task Detection Bugfix (2026-06-06)
+
+Three bugs found and fixed in `src/app/teammate/[teammateId]/page.tsx` after the icy modal task:
+
+**Bug 1 — Detection logic excluded custom recurring tasks entirely:**
+The `isRecurring` check gated on `taskToDelete.preset_task_id !== null`, which is always `false` for custom tasks (they have `preset_task_id = null`). Fixed to use a branching strategy: preset tasks match by `preset_task_id`; custom tasks match by `name`:
+```tsx
+isRecurring={recurringTasks.some(rt =>
+  taskToDelete.preset_task_id !== null
+    ? rt.preset_task_id === taskToDelete.preset_task_id
+    : rt.preset_task_id === null && rt.name === taskToDelete.name
+)}
+```
+
+**Bug 2 — `recurringTasks` state was never refreshed after adding a recurring task:**
+Added `fetchRecurringTasks` as a `useCallback` (mirrors `fetchTasks` but queries `recurring_tasks`). Called after every insert into `recurring_tasks` in both `submitAddTask` and `addPresetTask`. Previously the state was only populated at mount, so newly-added recurring tasks were invisible to the detection logic.
+
+**Bug 3 — `deleteTask` "forever" scope silently skipped custom tasks:**
+Was gated on `task.preset_task_id` being set. Now handles both branches: preset tasks delete by `preset_task_id`, custom tasks delete by `name`.
+
+---
+
+### ✅ "Repeatable (in a single day)" rename & UX clarification (PENDING — next task)
+
+**Background:** User confusion between two separate features:
+- **"Repeatable"** — complete the same task N times in a single day (shows 0/N → N/N counter). This is the correct feature for "I want to run 5 times today".
+- **"Repeat every day (recurring)"** — auto-seeds the task into `daily_tasks` each new day so it appears without manual re-adding.
+
+**What needs to change:**
+1. Rename the label **"Repeatable"** → **"Repeatable (in a single day)"** in the custom task form (`src/app/teammate/[teammateId]/page.tsx`, the `Toggle` near line 503)
+2. Rename the label **"Repeatable"** → **"Repeatable (in a single day)"** in `src/components/tasks/PresetTaskSelector.tsx` if it appears there
+3. The max-completions field label should read **"How many times in a single day?"** instead of "Max completions per day"
+4. The "Repeat every day (recurring)" toggle label is fine as-is — it correctly describes daily auto-seeding
+5. No behaviour changes — only label text
+
+**How the feature already works (do not change this):**
+- Toggle "Repeatable (in a single day)" ON → shows "How many times?" number input (default 1, min 2)
+- Task row shows `completion_count/max_completions` (e.g. `0/5 → 1/5 → ... → 5/5`)
+- "+" button increments `completion_count`; disabled when count reaches `max_completions`
+- `isTaskCompletable()` in `calculations.ts` correctly enforces the cap
+
+**Files to edit:**
+- `src/app/teammate/[teammateId]/page.tsx` — two Toggle labels + one Field label
+- `src/components/tasks/PresetTaskSelector.tsx` — check for any "Repeatable" or "Max completions" labels
+
+This is a pure label rename, no logic changes, no new tests needed.
+
 ---
 
 ## Next Tasks

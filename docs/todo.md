@@ -321,6 +321,29 @@
 
 ---
 
+## ✅ Recurring Task Detection Bugfix (2026-06-06)
+
+- [x] Fixed `isRecurring` detection logic — custom tasks (preset_task_id=null) now matched by name, not excluded by null guard
+- [x] Added `fetchRecurringTasks` callback; called after every insert into `recurring_tasks` so state stays fresh
+- [x] Fixed `deleteTask` "forever" scope to delete `recurring_tasks` rule for custom tasks (was silently skipping them)
+
+---
+
+## Task: Rename "Repeatable" → "Repeatable (in a single day)"
+
+**Context:** Users confuse "Repeatable" (complete N times in one day) with "Repeat every day (recurring)" (auto-seed daily). Pure label rename — no logic changes needed.
+
+### Steps
+- [ ] In `src/app/teammate/[teammateId]/page.tsx`: change Toggle label `"Repeatable"` → `"Repeatable (in a single day)"`
+- [ ] In `src/app/teammate/[teammateId]/page.tsx`: change Field label `"Max completions per day"` → `"How many times in a single day?"`
+- [ ] In `src/components/tasks/PresetTaskSelector.tsx`: check for any "Repeatable" or "Max completions" labels and apply same rename
+- [ ] Verify counter (0/N → N/N) still works and `isTaskCompletable()` still enforces the cap
+- [ ] Run `npm test` — expect 47 passed
+- [ ] Commit and push
+- [ ] Append summary to `handoff.md`
+
+---
+
 ## Task 9 — Leaderboard
 
 ### 9.1 Build leaderboard component
