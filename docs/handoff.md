@@ -445,6 +445,58 @@ Pure label rename — no logic changes:
 
 ---
 
+### ✅ Custom Task Points — Three Fixed Options (2026-06-06)
+
+Replaced the free-entry number input for points in the custom task creation form with three toggle buttons:
+- **Small** — 5 pts
+- **Medium** — 10 pts (default)
+- **Large** — 15 pts
+
+Selected option highlights in ice-blue (`#9DD8F7`). No logic changes — `form.points` still drives everything downstream identically.
+
+**File changed:** `src/app/teammate/[teammateId]/page.tsx` (the `<Field label="Points">` block, ~line 505)
+
+---
+
+### ✅ Preset Task Fixes — Recurring Bug, Renames, Removal, Ordering (2026-06-06)
+
+**Bug fix — recurring toggle had no effect for many preset tasks:**
+- Root cause: `addPresetTask` in `src/app/teammate/[teammateId]/page.tsx` guarded the `recurring_tasks` insert with `preset.can_be_recurring`. Several tasks (e.g. "Attend Islamic class", "Memorize Quran", "Give sadaqah") had `can_be_recurring = false` in the DB, so toggling "Repeat every day" silently did nothing and the 3-button delete modal never appeared.
+- Fix: removed the `&& preset.can_be_recurring` guard. Any preset task can now be made recurring, matching custom task behaviour exactly.
+
+**Content changes (applied via `supabase/migrations/003_update_preset_tasks.sql` — must be run manually in Supabase SQL editor):**
+- "Attend Islamic class" renamed → "Attend Halaqa/Dars in Person"; `can_be_recurring` set to `true`
+- "Read 10 pages" renamed → "Reading Regular Book"; points kept at 20, `is_repeatable` set to `false`, `default_max_completions` set to 1, `can_be_recurring` set to `true`
+- "Code for 1 hour" deleted from `preset_tasks`
+
+**Ordering (client-side sort in `src/components/tasks/PresetTaskSelector.tsx`):**
+
+Islamic Tasks display order:
+1. Seek Ilm
+2. Attend Halaqa/Dars in Person
+3. Read Quran
+4. Memorize Quran
+5. Review Quran
+6. Morning adhkar
+7. Evening adhkar
+8. Give sadaqah
+
+Regular Tasks display order:
+1. Journal
+2. Workout
+3. Reading Regular Book
+4. Study
+5. Apply to jobs
+6. Clean room
+
+Order is enforced by `sortByOrder()` helper in `PresetTaskSelector.tsx` — tasks not in the list fall to the bottom. `ISLAMIC_ORDER` and `REGULAR_ORDER` constants at the top of that file are the single source of truth for ordering.
+
+**`supabase/migrations/002_seed_data.sql` also updated** to reflect the final desired state (for fresh DB setups).
+
+All 47 tests still passing.
+
+---
+
 ## Next Tasks
 
 ### Task 6 — Preset Task System
