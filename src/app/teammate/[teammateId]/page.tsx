@@ -8,6 +8,7 @@ import { todayString } from '@/lib/dateUtils'
 import { calculateDisplayPoints, isTaskCompletable } from '@/lib/calculations'
 import type { Teammate, DailyTask, PresetTask, RecurringTask } from '@/types/database'
 import { PresetTaskSelector, Field, Toggle, inputStyle } from '@/components/tasks/PresetTaskSelector'
+import DeleteConfirmModal from '@/components/DeleteConfirmModal'
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -47,6 +48,8 @@ export default function TeammatePage({ params }: { params: Promise<{ teammateId:
 
   const [showAddForm, setShowAddForm] = useState(false)
   const [showPresetModal, setShowPresetModal] = useState(false)
+  const [recurringTasks, setRecurringTasks] = useState<RecurringTask[]>([])
+  const [taskToDelete, setTaskToDelete] = useState<DailyTask | null>(null)
   const [form, setForm] = useState<AddTaskForm>(DEFAULT_FORM)
   const [formBusy, setFormBusy] = useState(false)
   const [formError, setFormError] = useState('')
@@ -111,6 +114,7 @@ export default function TeammatePage({ params }: { params: Promise<{ teammateId:
         .select('*')
         .eq('teammate_id', teammateId)
         .eq('is_active', true)
+      setRecurringTasks((recurring as RecurringTask[]) ?? [])
       if (!recurring || recurring.length === 0) return
 
       const today2 = todayString()
@@ -280,6 +284,27 @@ export default function TeammatePage({ params }: { params: Promise<{ teammateId:
     await fetchTasks()
   }
 
+  // ── Delete task ─────────────────────────────────────────────────────────────
+  async function deleteTask(task: DailyTask, scope: 'today' | 'forever') {
+    setTaskToDelete(null)
+    setTasks(prev => prev.filter(t => t.id !== task.id))
+
+    await supabase.from('task_completions').delete().eq('daily_task_id', task.id)
+
+    const { error } = await supabase.from('daily_tasks').delete().eq('id', task.id)
+
+    if (scope === 'forever' && task.preset_task_id) {
+      await supabase
+        .from('recurring_tasks')
+        .delete()
+        .eq('teammate_id', task.teammate_id)
+        .eq('preset_task_id', task.preset_task_id)
+      setRecurringTasks(prev => prev.filter(rt => rt.preset_task_id !== task.preset_task_id))
+    }
+
+    if (error) await fetchTasks()
+  }
+
   // ── Logout ──────────────────────────────────────────────────────────────────
   function handleLogout() {
     logoutTeammate()
@@ -375,7 +400,7 @@ export default function TeammatePage({ params }: { params: Promise<{ teammateId:
           ) : (
             <ul className="flex flex-col gap-2">
               {required.map(task => (
-                <TaskRow key={task.id} task={task} onComplete={completeTask} />
+                <TaskRow key={task.id} task={task} onComplete={completeTask} onDelete={setTaskToDelete} />
               ))}
             </ul>
           )}
@@ -387,7 +412,7 @@ export default function TeammatePage({ params }: { params: Promise<{ teammateId:
             <p className="text-xs font-semibold uppercase tracking-widest mb-3" style={{ color: '#9DD8F7' }}>Optional Tasks</p>
             <ul className="flex flex-col gap-2">
               {optional.map(task => (
-                <TaskRow key={task.id} task={task} onComplete={completeTask} />
+                <TaskRow key={task.id} task={task} onComplete={completeTask} onDelete={setTaskToDelete} />
               ))}
             </ul>
           </section>
@@ -537,13 +562,33 @@ export default function TeammatePage({ params }: { params: Promise<{ teammateId:
         )}
 
       </div>
+
+      {taskToDelete && (
+        <DeleteConfirmModal
+          task={taskToDelete}
+          isRecurring={recurringTasks.some(
+            rt => rt.preset_task_id === taskToDelete.preset_task_id && taskToDelete.preset_task_id !== null
+          )}
+          onCancel={() => setTaskToDelete(null)}
+          onDeleteToday={() => deleteTask(taskToDelete, 'today')}
+          onDeleteForever={() => deleteTask(taskToDelete, 'forever')}
+        />
+      )}
     </main>
   )
 }
 
 // ─── Sub-components ───────────────────────────────────────────────────────────
 
-function TaskRow({ task, onComplete }: { task: DailyTask; onComplete: (t: DailyTask) => void }) {
+function TaskRow({
+  task,
+  onComplete,
+  onDelete,
+}: {
+  task: DailyTask
+  onComplete: (t: DailyTask) => void
+  onDelete: (t: DailyTask) => void
+}) {
   const done = task.is_completed
   const disabled = !isTaskCompletable(task)
 
@@ -576,6 +621,24 @@ function TaskRow({ task, onComplete }: { task: DailyTask; onComplete: (t: DailyT
           )}
         </div>
       </div>
+
+      {/* Delete button */}
+      <button
+        onClick={() => onDelete(task)}
+        className="shrink-0 w-10 h-10 rounded-lg flex items-center justify-center text-sm transition-opacity hover:opacity-80"
+        style={{
+          background: 'rgba(220,38,38,0.1)',
+          border: '1px solid rgba(220,38,38,0.25)',
+          color: 'rgba(220,38,38,0.7)',
+          minHeight: '44px',
+          minWidth: '44px',
+        }}
+        aria-label="Remove task"
+      >
+        ✕
+      </button>
+
+      {/* Complete button */}
       <button
         disabled={disabled}
         onClick={() => onComplete(task)}
