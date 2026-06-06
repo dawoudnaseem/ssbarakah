@@ -146,7 +146,8 @@ async function deleteTask(task: DailyTask, scope: 'today' | 'forever') {
 
 After implementation, update:
 - `docs/handoff.md` — add IcyModal to component descriptions; add DeleteConfirmModal; update IcyErrorModal and LoginModal entries to note they use IcyModal
-- `docs/SS_Barakah_Requirements.md` — update any section describing modal appearance to reference the icy/glossy design
+- `docs/SS_Barakah_Requirements.md` — update any section describing modal appearance to reference the icy/glossy design with icicles; add delete task behaviour (any task, with recurring scope choice) to the teammate dashboard section
+- `docs/todo.md` — mark the icy modal system and delete task work as a new completed task entry once done; also add a note to any future task that involves a modal reminding that IcyModal must be used
 
 ---
 
@@ -161,5 +162,6 @@ After implementation, update:
 | EDIT | `src/app/teammate/[teammateId]/page.tsx` |
 | EDIT | `docs/handoff.md` |
 | EDIT | `docs/SS_Barakah_Requirements.md` |
+| EDIT | `docs/todo.md` |
 
 No new tests required — all new logic is UI-only (delete DB calls are too integration-heavy for unit tests; the pure calculations are unchanged).
