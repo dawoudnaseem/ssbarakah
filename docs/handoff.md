@@ -435,6 +435,16 @@ This is a pure label rename, no logic changes, no new tests needed.
 
 ---
 
+### ✅ "Repeatable (in a single day)" Label Rename (2026-06-06)
+
+Pure label rename — no logic changes:
+- `src/app/teammate/[teammateId]/page.tsx`: Toggle label `"Repeatable"` → `"Repeatable (in a single day)"`
+- `src/app/teammate/[teammateId]/page.tsx`: Field label `"Max completions per day"` → `"How many times in a single day?"`
+- `src/components/tasks/PresetTaskSelector.tsx`: no "Repeatable" or "Max completions" labels found — nothing to change
+- All 47 tests still passing
+
+---
+
 ## Next Tasks
 
 ### Task 6 — Preset Task System

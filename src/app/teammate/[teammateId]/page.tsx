@@ -522,12 +522,12 @@ export default function TeammatePage({ params }: { params: Promise<{ teammateId:
                 onChange={v => setForm(f => ({ ...f, is_required: v }))}
               />
               <Toggle
-                label="Repeatable"
+                label="Repeatable (in a single day)"
                 checked={form.is_repeatable}
                 onChange={v => setForm(f => ({ ...f, is_repeatable: v }))}
               />
               {form.is_repeatable && (
-                <Field label="Max completions per day">
+                <Field label="How many times in a single day?">
                   <input
                     type="number"
                     min={2}

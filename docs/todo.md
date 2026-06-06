@@ -334,13 +334,13 @@
 **Context:** Users confuse "Repeatable" (complete N times in one day) with "Repeat every day (recurring)" (auto-seed daily). Pure label rename — no logic changes needed.
 
 ### Steps
-- [ ] In `src/app/teammate/[teammateId]/page.tsx`: change Toggle label `"Repeatable"` → `"Repeatable (in a single day)"`
-- [ ] In `src/app/teammate/[teammateId]/page.tsx`: change Field label `"Max completions per day"` → `"How many times in a single day?"`
-- [ ] In `src/components/tasks/PresetTaskSelector.tsx`: check for any "Repeatable" or "Max completions" labels and apply same rename
-- [ ] Verify counter (0/N → N/N) still works and `isTaskCompletable()` still enforces the cap
-- [ ] Run `npm test` — expect 47 passed
-- [ ] Commit and push
-- [ ] Append summary to `handoff.md`
+- [x] In `src/app/teammate/[teammateId]/page.tsx`: change Toggle label `"Repeatable"` → `"Repeatable (in a single day)"`
+- [x] In `src/app/teammate/[teammateId]/page.tsx`: change Field label `"Max completions per day"` → `"How many times in a single day?"`
+- [x] In `src/components/tasks/PresetTaskSelector.tsx`: check for any "Repeatable" or "Max completions" labels and apply same rename
+- [x] Verify counter (0/N → N/N) still works and `isTaskCompletable()` still enforces the cap
+- [x] Run `npm test` — expect 47 passed
+- [x] Commit and push
+- [x] Append summary to `handoff.md`
 
 ---
 
