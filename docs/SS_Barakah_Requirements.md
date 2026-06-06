@@ -1487,13 +1487,123 @@ When generating recurring tasks for the day, do not create duplicates if the tas
 
 ---
 
-## 25. Future Features After MVP
+## 25. Mobile Requirements
+
+The app must be fully usable on mobile phones (iOS and Android browsers). Teammates should be able to log in, complete tasks, use the Pomodoro timer, and view the ship dashboard with animations on a phone screen, with no horizontal scrolling and no broken layouts.
+
+This is part of the MVP.
+
+### 25.1 Responsive Breakpoints
+
+Use Tailwind CSS responsive prefixes consistently.
+
+Breakpoints to support:
+
+- Mobile: 320px to 639px (default, no prefix)
+- Tablet: 640px to 1023px (`sm:` prefix)
+- Desktop: 1024px and above (`lg:` prefix)
+
+Every page and component must be designed mobile-first: start from the smallest screen, then layer in wider layouts.
+
+### 25.2 Login Page on Mobile
+
+- Full-width card, centered vertically
+- Ship silhouette and iceberg scale down gracefully
+- Inputs and login button are full width on mobile
+- No overflow or horizontal scroll
+
+### 25.3 Main Ship Dashboard on Mobile
+
+The desktop layout stacks many elements side by side. On mobile, reorder and stack vertically:
+
+Suggested mobile stacking order:
+
+1. Mission status label and countdown timer
+2. Ship scene (fixed canvas, smaller size, e.g. 320px wide max)
+3. Team progress bar
+4. Daily Chad and Chud badges
+5. Leaderboard (compact, scrollable)
+6. Recent activity feed (collapsed or scrollable)
+
+The ship scene must not overflow the viewport on mobile. Use a fixed max-width container and scale worker positions relative to the container, not the full window.
+
+### 25.4 Teammate Dashboard on Mobile
+
+Stack all sections vertically:
+
+1. Teammate name and badge
+2. Points today and streak
+3. Task list (each task as a full-width card with completion button)
+4. Pomodoro timer
+5. Add task / select preset buttons
+6. Heatmap (scrollable horizontally if needed)
+
+Touch targets must be at least 44px tall for all buttons and interactive elements.
+
+### 25.5 Admin Dashboard on Mobile
+
+- All forms stack vertically
+- Select dropdowns and inputs are full width
+- Tables (teammate list, preset task list) scroll horizontally or collapse into stacked cards
+
+### 25.6 History/Stats Page on Mobile
+
+- Past outcomes list scrolls vertically
+- Heatmaps scroll horizontally within their container (do not break layout)
+- Charts collapse to a simple table on mobile if the chart library does not render well at small sizes
+
+### 25.7 Ship Scene on Mobile
+
+The ship animation must work on mobile without relying on absolute pixel positions that assume a large viewport.
+
+Requirements:
+
+- Use a fixed-size SVG or div container (e.g. 300px × 200px on mobile, 600px × 350px on desktop)
+- Position workers relative to the ship container using percentages or relative units, not viewport-relative values
+- All CSS keyframe animations must work on mobile browsers (avoid `will-change` overuse; use `transform` and `opacity` only for GPU compositing)
+- Tilt, wave, and worker animations must run smoothly on mid-range phones
+
+### 25.8 Pomodoro Timer on Mobile
+
+- Timer must continue counting when the browser tab is in the background or the phone screen is locked
+- Use the `visibilitychange` event to detect when the tab is hidden
+- On `visibilitychange`, record a timestamp; on return, calculate elapsed time and adjust the countdown accordingly
+- This prevents the common iOS/Android bug where JS `setInterval` pauses when the tab is hidden
+
+### 25.9 Touch Interactions
+
+- All buttons must be tappable with no hover-only states
+- No actions should depend on hover (e.g. tooltip-only info must also be accessible via tap)
+- Modals and dropdowns should be dismissible by tapping outside
+
+### 25.10 No Horizontal Scroll
+
+The entire app must have no unintended horizontal scroll on any page at any breakpoint.
+
+Test at 320px width (smallest common phone) to confirm.
+
+### 25.11 Mobile Definition of Done
+
+The mobile requirements are complete when:
+
+1. All pages render correctly at 320px, 375px, 390px, and 768px widths.
+2. Ship animations run on mobile Safari and Chrome without layout overflow.
+3. Workers are positioned relative to the ship container, not the window.
+4. Pomodoro timer continues when the tab is hidden on iOS and Android.
+5. All buttons and interactive elements have a minimum 44px tap target.
+6. No horizontal scroll exists on any page at mobile widths.
+7. The admin dashboard is fully usable on a phone.
+8. Heatmaps scroll horizontally without breaking the page layout.
+
+---
+
+## 26. Future Features After MVP
 
 Possible future features:
 
 1. Emergency repair shield if the team has a long streak
 2. Push notifications
-3. Mobile app version
+3. Native mobile app (React Native)
 4. Weekly team recap
 5. Islamic reminder quotes
 6. Team duaa of the day
@@ -1508,7 +1618,7 @@ Possible future features:
 
 ---
 
-## 26. Development Priorities
+## 27. Development Priorities
 
 Build in this order:
 
@@ -1528,10 +1638,11 @@ Build in this order:
 14. Heatmaps
 15. Pomodoro timer
 16. Ship animations and polish
+17. Mobile responsiveness and Pomodoro background timer fix
 
 ---
 
-## 27. Definition of Done for MVP
+## 28. Definition of Done for MVP
 
 The MVP is complete when:
 
@@ -1554,12 +1665,15 @@ The MVP is complete when:
 17. Daily badges display clearly on the dashboard.
 18. History/stats page shows past results.
 19. Heatmaps show individual consistency.
-20. Pomodoro timer works.
+20. Pomodoro timer works and continues counting when the tab is in the background.
 21. The app uses a consistent Arctic/ocean/iceberg theme.
+22. All pages render correctly at 320px, 375px, and 768px widths with no horizontal scroll.
+23. Ship animations run on mobile Safari and Chrome without layout overflow.
+24. All buttons have a minimum 44px tap target on mobile.
 
 ---
 
-## 28. Final Product Vision
+## 30. Final Product Vision
 
 S.S. Barakah is a team accountability app where productivity becomes a shared survival mission. Every day, the team boards a damaged ship in the Arctic Ocean. Every completed task repairs the ship. If everyone fulfills their commitments, the ship survives. If even one repair is left unfinished, the ship sinks.
 
