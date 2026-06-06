@@ -1,5 +1,7 @@
 'use client'
 
+import { useEffect } from 'react'
+
 interface IcyModalProps {
   onClose: () => void
   children: React.ReactNode
@@ -20,8 +22,16 @@ const ICICLES: [number, number, number][] = [
 ]
 
 export default function IcyModal({ onClose, children, maxWidth = 'max-w-sm' }: IcyModalProps) {
+  useEffect(() => {
+    const handleEsc = (e: KeyboardEvent) => { if (e.key === 'Escape') onClose() }
+    document.addEventListener('keydown', handleEsc)
+    return () => document.removeEventListener('keydown', handleEsc)
+  }, [onClose])
+
   return (
     <div
+      role="dialog"
+      aria-modal="true"
       className="fixed inset-0 z-50 flex items-center justify-center p-4"
       style={{ background: 'rgba(6,24,38,0.8)', backdropFilter: 'blur(6px)' }}
       onClick={onClose}
@@ -43,7 +53,7 @@ export default function IcyModal({ onClose, children, maxWidth = 'max-w-sm' }: I
             preserveAspectRatio="none"
             width="100%"
             height="52px"
-            aria-hidden
+            aria-hidden="true"
           >
             {ICICLES.map(([x, w, h], i) => (
               <g key={i}>
