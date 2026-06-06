@@ -1,11 +1,12 @@
 # S.S. Barakah — Task List
 
-> Build order follows Section 26 of the requirements document.
+> Build order follows Section 27 of the requirements document (updated 2026-06-05).
 > After completing each task, append a summary to `handoff.md`.
+> Tasks marked ✅ are complete — see `handoff.md` for details.
 
 ---
 
-## Task 1 — Project Setup & Supabase Schema
+## ✅ Task 1 — Project Setup & Supabase Schema
 
 ### 1.1 Initialize Next.js project
 - [ ] Run `npx create-next-app@latest` with TypeScript, Tailwind CSS, App Router
@@ -35,7 +36,7 @@
 
 ---
 
-## Task 2 — Supabase Client & Project Structure
+## ✅ Task 2 — Supabase Client & Project Structure
 
 ### 2.1 Create folder structure
 - [ ] Set up `src/app/` directory with page files for `/`, `/login`, `/teammate/[teammateId]`, `/admin`, `/history`
@@ -78,34 +79,87 @@
 
 ---
 
-## Task 3 — Login Page
+## ✅ Task 3 — Login Page (v1 complete; redesign required — see Task 3b)
 
-### 3.1 Build login page UI (`/login`)
-- [ ] App name "S.S. Barakah" displayed prominently
-- [ ] Short mission intro text
-- [ ] Name input field
-- [ ] Password input field
-- [ ] Login button
-- [ ] Error message display for invalid credentials
+> Original build complete. Design changed per 2026-06-05 UI overhaul spec. Task 3b below covers the rebuild.
 
-### 3.2 Apply Arctic visual theme to login page
-- [ ] Deep navy/dark blue background (`#061826`)
-- [ ] Floating ship silhouette (CSS/SVG)
-- [ ] Iceberg illustration (CSS/SVG)
-- [ ] Ocean tone color palette
-
-### 3.3 Wire up login logic
-- [ ] Call `loginTeammate(name, password)` from `auth.ts` on form submit
-- [ ] Store active teammate ID in session storage / local storage on success
-- [ ] Redirect to `/teammate/[teammateId]` on successful login
-- [ ] Show error message on failed login
-
-### 3.4 Update handoff.md
-- [ ] Append summary of Task 3 to `handoff.md`
+### 3.1 Build login page UI (`/login`) ✅
+### 3.2 Apply Arctic visual theme to login page ✅
+### 3.3 Wire up login logic ✅
+### 3.4 Update handoff.md ✅
 
 ---
 
-## Task 4 — Teammate Dashboard Page
+## Task 3b — Login Page Redesign & Auth Persistence
+
+> Spec: `docs/superpowers/specs/2026-06-05-ui-overhaul-design.md`
+
+### 3b.1 Auth persistence
+- [ ] Switch teammate session from `sessionStorage` to `localStorage` in `src/lib/auth.ts`
+- [ ] Update admin code constant from `"Dawoud Sink"` to the new code in `src/lib/auth.ts`
+- [ ] Confirm `logoutTeammate()` and `getCurrentTeammate()` use `localStorage`
+- [ ] Admin session remains in `sessionStorage` (no change)
+
+### 3b.2 Redesign `/login` page (full-screen Arctic scene)
+- [ ] Remove centered frosted-glass card layout
+- [ ] Add "S.S. Barakah" title + tagline at the top of the page
+- [ ] Large ship SVG centered, slightly tilted (~5°)
+- [ ] Massive threatening iceberg on one side, smaller iceberg on the other
+- [ ] Stars scattered in upper portion
+- [ ] Animated wave layer covering bottom ~25% of screen
+- [ ] Full-width frosted "Crew Access" panel docked to the bottom edge
+  - Label: "Crew Access" + "Board the ship to begin" subtext
+  - Name input · Password input · "Board →" button — horizontal row on desktop
+  - On mobile: inputs stack vertically within the panel
+
+### 3b.3 Icy error modal
+- [ ] Create `src/components/IcyErrorModal.tsx` — frosted glass, red-tinted border (`#DC2626` accent), dismiss on click or outside tap
+- [ ] Replace inline error message on login page with `IcyErrorModal`
+
+### 3b.4 Update handoff.md
+- [ ] Append summary of Task 3b to `handoff.md`
+
+---
+
+## Task 3c — Nav Bar & Login Modal
+
+> Spec: `docs/superpowers/specs/2026-06-05-ui-overhaul-design.md`
+
+### 3c.1 ConditionalNav wrapper
+- [ ] Create `src/components/ConditionalNav.tsx` — client component that uses `usePathname()` to render `<NavBar />` on all pages except `/login`
+- [ ] Add `<ConditionalNav />` to `src/app/layout.tsx`
+
+### 3c.2 NavBar component (`src/components/NavBar.tsx`)
+- [ ] Fixed top bar with Arctic styling (dark background, `#9DD8F7` accents)
+- [ ] Left: `⚓ S.S. Barakah` logo linking to `/`
+- [ ] Center: Ship · History · Admin links — active page underlined
+- [ ] Right (logged out): `Board Ship →` button — opens login modal on click
+- [ ] Right (logged in): teammate initial circle + name + `▾` — opens dropdown with "My Dashboard" and "Log Out"
+- [ ] Dropdown closes on outside click
+- [ ] Read current teammate from `localStorage` via `getCurrentTeammate()` on mount
+
+### 3c.3 Mobile hamburger
+- [ ] Center links collapse into `☰` button on mobile
+- [ ] Hamburger opens a frosted dark drawer sliding down with stacked links: Ship · History · Admin
+- [ ] Drawer closes on outside tap or link click
+
+### 3c.4 Login modal (`src/components/LoginModal.tsx`)
+- [ ] Modal overlay on current page (no navigation)
+- [ ] Ship silhouette, "S.S. Barakah" title, name input, password input, "Board →" button
+- [ ] Calls `loginTeammate()` on submit
+- [ ] On failure: show `IcyErrorModal`
+- [ ] On success: store in `localStorage`, close modal, update NavBar right side, redirect to `/teammate/[id]`
+- [ ] Dismissible by clicking outside the modal
+
+### 3c.5 Clean up teammate dashboard
+- [ ] Remove bottom nav buttons from `src/app/teammate/[teammateId]/page.tsx` (now handled by NavBar)
+
+### 3c.6 Update handoff.md
+- [ ] Append summary of Task 3c to `handoff.md`
+
+---
+
+## ✅ Task 4 — Teammate Dashboard Page
 
 ### 4.1 Build teammate dashboard UI (`/teammate/[teammateId]`)
 - [ ] Display teammate name
@@ -305,8 +359,8 @@
 ### 11.1 Build admin code gate
 - [ ] Create `src/components/admin/AdminCodeGate.tsx`
 - [ ] Show code input before revealing admin dashboard
-- [ ] Validate against "Dawoud Sink"
-- [ ] Store admin access in session storage for current session
+- [ ] Validate using `validateAdminCode()` from `src/lib/auth.ts` (code is hardcoded there, not in this component)
+- [ ] Store admin access in `sessionStorage` for current session only
 
 ### 11.2 Teammate management UI
 - [ ] Create `src/components/admin/TeammateManager.tsx`
@@ -470,21 +524,41 @@
 - [ ] Overlay success message: "Success! The ship survived. Good job everyone!"
 
 ### 16.5 Failure/sinking animation
-- [ ] Ship tilts further and translates downward (CSS `translateY`)
-- [ ] Workers speed up then disappear
-- [ ] Overlay failure message: "The ship has sunk. Some repairs were left unfinished."
-- [ ] Show list of teammates who missed tasks
+- [ ] Ship tilts further then translates downward into the ocean (CSS `translateY`) — does NOT crash into iceberg
+- [ ] Workers speed up then disappear one by one
+- [ ] Iceberg remains as static background element
+- [ ] Failure overlay fades in with:
+  - "The ship has sunk."
+  - List of teammates who missed required tasks
+  - Chud badge callout: "💀 Chud of the Day: [name] — [X] tasks missed, [Y] points"
 
-### 16.6 Progress state visual transitions
+### 16.6 Daily intro crash animation (`src/components/IntroAnimation.tsx`)
+- [ ] Check `localStorage` key `ss_barakah_last_intro` on app load — play if stored date ≠ today
+- [ ] "Skip ›" button fixed at bottom-right throughout entire sequence
+- [ ] Sequence:
+  1. Dark fade-in → ocean + stars + large ship sailing left to right (ship takes ~75% of screen width)
+  2. Dialog bubble — Araf: "Yo, word on the street is there's an iceberg in front of us."
+  3. ~1s pause → Dawoud: "Wdym bro?"
+  4. ~1s pause → Everyone: "AHHHHHHHHHHH"
+  5. Large iceberg slides in fast from right edge
+  6. Full-screen pulsing red alarm overlay — play alarm sound from `public/sounds/alarm.mp3` (silent if autoplay blocked)
+  7. Screen shake keyframe + crack SVG animates onto hull
+  8. Alarm fades, ship settles tilted with crack
+  9. Crossfade → main dashboard
+- [ ] On complete or skip: write `ss_barakah_last_intro = todayString()` to `localStorage`
+- [ ] Dialog bubbles positioned relative to ship container (not viewport) for mobile correctness
+- [ ] Source a short royalty-free alarm sound and place in `public/sounds/alarm.mp3`
+
+### 16.7 Progress state visual transitions
 - [ ] Smoothly interpolate ship tilt across 5 progress states
 - [ ] Worker panic speed tied to state
 
-### 16.7 Global theme polish
+### 16.8 Global theme polish
 - [ ] Apply color palette throughout app (`#061826`, `#0B3558`, `#9DD8F7`, `#F2FBFF`, `#F59E0B`, `#DC2626`, `#22C55E`)
 - [ ] Frosted glass card style for UI panels
 - [ ] Consistent Arctic atmosphere across all pages
 
-### 16.8 Update handoff.md
+### 16.9 Update handoff.md
 - [ ] Append summary of Task 16 to `handoff.md`
 
 ---
@@ -526,8 +600,9 @@
 ## Task 18 — Final QA & MVP Verification
 
 ### 18.1 Test all Definition of Done criteria (Section 28)
-- [ ] Each teammate can log in with name and password
-- [ ] Admin can unlock admin dashboard with "Dawoud Sink"
+- [ ] Each teammate can log in with name and password and stay logged in across browser restarts
+- [ ] Login modal works from the nav bar on any page
+- [ ] Admin can unlock admin dashboard with the admin code
 - [ ] Admin can add/remove teammates
 - [ ] Admin can change teammate passwords
 - [ ] Teammates can select daily tasks
@@ -546,6 +621,8 @@
 - [ ] History/stats page shows past results
 - [ ] Heatmaps show individual consistency
 - [ ] Pomodoro timer works and continues when tab is in background
+- [ ] Daily intro crash animation plays once per day and can be skipped
+- [ ] Failure overlay shows ship sinking (not crashing) with Chud badge displayed
 - [ ] App uses consistent Arctic/ocean/iceberg theme
 - [ ] All pages render correctly at 320px, 375px, and 768px with no horizontal scroll
 - [ ] Ship animations run on mobile Safari and Chrome without overflow
