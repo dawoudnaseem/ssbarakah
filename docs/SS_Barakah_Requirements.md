@@ -142,8 +142,12 @@ Flow:
 2. User enters their password.
 3. App checks Supabase `teammates` table.
 4. If name and password match, user is logged in locally.
-5. Store the active teammate ID in local storage or session storage.
+5. Store the active teammate in `localStorage` so the session persists across browser restarts and tab closures.
 6. Redirect to that teammate’s dashboard page.
+
+Login can be triggered from two places:
+- The `/login` page (used as fallback when an auth guard redirects an unauthenticated user)
+- The login modal opened by clicking "Board Ship →" in the nav bar on any page
 
 ### 6.2 Password Simplicity
 
@@ -162,19 +166,15 @@ If building quickly for MVP, plain text passwords can be temporarily used, but t
 
 The admin dashboard is protected by a simple admin code.
 
-Admin code:
-
-```txt
-Dawoud Sink
-```
+Admin code is hardcoded in `src/lib/auth.ts`. It is intentionally kept out of this document for basic security. It can be moved to Supabase (server-side validated, never exposed to the client) in a post-MVP pass.
 
 Admin access flow:
 
-1. User navigates to `/admin`.
-2. App shows an admin code input.
+1. User clicks "Admin" in the nav bar and navigates to `/admin`.
+2. App shows an admin code input gate.
 3. User enters the code.
-4. If the code matches `Dawoud Sink`, admin dashboard is unlocked.
-5. Admin access can be stored in session storage for the current browser session.
+4. If the code matches, admin dashboard is unlocked.
+5. Admin access is stored in `sessionStorage` for the current browser tab only — intentionally short-lived. Re-entry is required per tab.
 
 The admin dashboard must not be publicly accessible without entering the code.
 
@@ -214,23 +214,55 @@ Suggested route:
 
 Purpose:
 
-Allow teammates to log in using their name and password.
+Fallback login destination used when an auth guard redirects an unauthenticated user. The primary login entry point is the "Board Ship →" button in the nav bar, which opens a modal instead of navigating here.
 
-Content:
+Layout (full-screen Arctic scene):
 
-- App name: S.S. Barakah
-- Short mission intro
-- Name input
-- Password input
-- Login button
-- Error message for invalid login
+- **Top:** App name "S.S. Barakah" + tagline displayed at the top of the page
+- **Center:** Large ship SVG, slightly tilted (~5°), with a massive iceberg threatening on one side and a smaller iceberg on the other. Stars scattered in the upper portion.
+- **Bottom ~25%:** Animated wave layer
+- **Docked to bottom edge:** Full-width frosted "Crew Access" panel containing a label ("Crew Access"), name input, password input, and Board button — all in one horizontal row. On mobile the inputs stack vertically within the panel.
 
-Visual theme:
+Error handling:
 
-- Arctic background
-- Floating ship silhouette
-- Iceberg illustration
-- Dark blue ocean tones
+- Failed login shows an icy modal overlay (frosted glass, red-tinted border) with the error message. Not an inline error under the inputs.
+- Modal dismisses on button click or outside tap.
+
+Post-login:
+
+- Store teammate in `localStorage`, redirect to `/teammate/[id]`.
+
+---
+
+## 8.1a Nav Bar
+
+The app has a persistent fixed nav bar that appears on every page **except** `/login`.
+
+### Desktop layout
+
+```
+[ ⚓ S.S. Barakah ]   [ Ship · History · Admin ]   [ Board Ship → ] or [ D Dawoud ▾ ]
+```
+
+- Logo on the left links to `/`
+- Center links: Ship (`/`), History (`/history`), Admin (`/admin`) — active page is underlined
+- Right side is context-aware:
+  - **Logged out:** "Board Ship →" button — opens the login modal (no page navigation)
+  - **Logged in:** Teammate's initial in a circle + name + chevron — opens a dropdown with "My Dashboard" and "Log Out"
+
+### Mobile layout
+
+- Logo on the left, right-side button/avatar stays visible at all times
+- Center links collapse into a hamburger (☰) button
+- Hamburger opens a frosted dark drawer with stacked links: Ship, History, Admin
+
+### Login modal
+
+Triggered by "Board Ship →" in the nav. Overlays the current page without navigating away.
+
+- Contains: ship silhouette, "S.S. Barakah" title, name input, password input, Board button
+- On failed login: same icy modal as the login page
+- On success: closes modal, updates nav right side to show teammate name, redirects to `/teammate/[id]`
 
 ---
 
@@ -312,16 +344,22 @@ Good job everyone!
 If the deadline passes and at least one required task is incomplete:
 
 - Ship tilts more dramatically.
-- Workers panic faster.
-- Ship slowly sinks below the ocean.
-- Display failure message:
+- Workers panic faster then fade out one by one.
+- Ship slowly translates downward and sinks below the ocean wave layer.
+- The ship does **not** crash into the iceberg — it simply sinks in place. The iceberg remains as a static threat in the background.
+- Display failure overlay:
 
 ```txt
 The ship has sunk.
-Some repairs were left unfinished.
 ```
 
-Then show which teammates missed tasks.
+Followed by a list of teammates who missed required tasks, and a prominent Chud badge callout:
+
+```txt
+💀 Chud of the Day: [name] — [X] tasks missed, [Y] points
+```
+
+Chud is always assigned on a failed day (someone always missed tasks if the ship sank).
 
 ---
 
@@ -1254,7 +1292,45 @@ End of day failure
 
 ---
 
-## 18.2 Animation Implementation Notes
+## 18.2 Daily Intro Crash Animation
+
+Plays once per day on first app load. Tracked via `localStorage` key `ss_barakah_last_intro` (stores the last date it played). If stored date ≠ today, animation plays before the dashboard loads.
+
+### Skip button
+
+A "Skip ›" button is fixed at the bottom-right throughout the entire animation. Clicking it immediately fades out and loads the dashboard.
+
+### Sequence
+
+1. Dark fade-in → ocean + stars + large ship sailing smoothly from left to right
+2. Ship is zoomed in — takes approximately 75% of screen width. Ocean is visible below, stars above.
+3. Character dialog bubble appears near Araf's position on deck:
+   > **Araf:** *"Yo, word on the street is there's an iceberg in front of us."*
+4. ~1 second pause, then Dawoud's bubble:
+   > **Dawoud:** *"Wdym bro?"*
+5. ~1 second pause, then a group bubble from the whole crew:
+   > **Everyone:** *"AHHHHHHHHHHH"*
+6. Large iceberg slides in fast from the right edge of the screen
+7. Full-screen red flashing alarm overlay (pulsing red tint) — alarm sound plays if browser autoplay is permitted. If autoplay is blocked, animation continues silently.
+8. Impact: screen shake (CSS `translate` keyframe), crack SVG path animates onto the hull
+9. Alarm fades, ship settles tilted with crack visible
+10. Crossfade → main dashboard (`/`)
+
+### Sound
+
+A short alarm sound clip stored in `public/sounds/`. Loaded as an HTML `<audio>` element and triggered on the impact frame. Plays silently if browser autoplay policy blocks it — no error is shown to the user.
+
+### Character dialog positions
+
+Dialog bubbles are positioned relative to the ship SVG container, not the viewport, so they scale correctly on mobile.
+
+### Storage
+
+On animation complete or skip, write `ss_barakah_last_intro = todayString()` to `localStorage`.
+
+---
+
+## 18.3 Animation Implementation Notes
 
 For MVP:
 
@@ -1274,6 +1350,11 @@ The ship animation should be impressive enough to feel fun, but simple enough to
 
 Suggested reusable components:
 
+- `NavBar` — persistent top nav with login modal and context-aware right side
+- `ConditionalNav` — hides NavBar on `/login` using `usePathname`
+- `LoginModal` — modal version of the login form, used in NavBar
+- `IcyErrorModal` — frosted glass red-tinted error overlay used on both login page and login modal
+- `IntroAnimation` — daily crash animation sequence with skip button
 - `ShipScene`
 - `ProgressBar`
 - `Leaderboard`
@@ -1308,6 +1389,11 @@ src/
     history/
       page.tsx
   components/
+    NavBar.tsx
+    ConditionalNav.tsx
+    LoginModal.tsx
+    IcyErrorModal.tsx
+    IntroAnimation.tsx
     ship/
       ShipScene.tsx
       Worker.tsx
@@ -1507,10 +1593,12 @@ Every page and component must be designed mobile-first: start from the smallest 
 
 ### 25.2 Login Page on Mobile
 
-- Full-width card, centered vertically
-- Ship silhouette and iceberg scale down gracefully
-- Inputs and login button are full width on mobile
+- Full-screen Arctic scene scales to the viewport
+- Ship SVG and icebergs scale down gracefully within the scene
+- "Crew Access" panel at the bottom: inputs stack vertically (name above password) rather than side by side
+- Board button is full width on mobile
 - No overflow or horizontal scroll
+- Icy error modal fits within the mobile viewport
 
 ### 25.3 Main Ship Dashboard on Mobile
 
@@ -1624,21 +1712,22 @@ Build in this order:
 
 1. Supabase schema
 2. Supabase client setup
-3. Login page
-4. Teammate dashboard
-5. Daily task creation and completion
-6. Preset task system
-7. Main ship dashboard
-8. Progress calculation
-9. Leaderboard
-10. Chad/Chud badge logic
-11. Admin dashboard
-12. Daily finalization
-13. History/stats page
-14. Heatmaps
-15. Pomodoro timer
-16. Ship animations and polish
-17. Mobile responsiveness and Pomodoro background timer fix
+3. Login page (full-screen Arctic scene, Crew Access panel, icy error modal)
+4. Nav bar (persistent, context-aware, login modal, hamburger on mobile)
+5. Teammate dashboard
+6. Daily task creation and completion
+7. Preset task system
+8. Main ship dashboard
+9. Progress calculation
+10. Leaderboard
+11. Chad/Chud badge logic
+12. Admin dashboard
+13. Daily finalization
+14. History/stats page
+15. Heatmaps
+16. Pomodoro timer
+17. Ship animations and polish (including intro crash animation and sinking failure animation)
+18. Mobile responsiveness and Pomodoro background timer fix
 
 ---
 
@@ -1646,9 +1735,10 @@ Build in this order:
 
 The MVP is complete when:
 
-1. Each teammate can log in with name and password.
-2. Admin can unlock admin dashboard with `Dawoud Sink`.
-3. Admin can add/remove teammates.
+1. Each teammate can log in with name and password and stay logged in across browser restarts.
+2. Logging in via the nav bar modal works from any page.
+3. Admin can unlock admin dashboard with the admin code.
+4. Admin can add/remove teammates.
 4. Admin can change teammate passwords.
 5. Teammates can select daily tasks.
 6. Teammates can complete daily tasks.
@@ -1666,10 +1756,12 @@ The MVP is complete when:
 18. History/stats page shows past results.
 19. Heatmaps show individual consistency.
 20. Pomodoro timer works and continues counting when the tab is in the background.
-21. The app uses a consistent Arctic/ocean/iceberg theme.
-22. All pages render correctly at 320px, 375px, and 768px widths with no horizontal scroll.
-23. Ship animations run on mobile Safari and Chrome without layout overflow.
-24. All buttons have a minimum 44px tap target on mobile.
+21. The daily intro crash animation plays once per day and can be skipped.
+22. The end-of-day failure shows the ship sinking (not crashing) with the Chud badge displayed in the failure overlay.
+23. The app uses a consistent Arctic/ocean/iceberg theme.
+24. All pages render correctly at 320px, 375px, and 768px widths with no horizontal scroll.
+25. Ship animations run on mobile Safari and Chrome without layout overflow.
+26. All buttons have a minimum 44px tap target on mobile.
 
 ---
 
