@@ -100,6 +100,16 @@ export default function TeammatePage({ params }: { params: Promise<{ teammateId:
     setPresets((data as PresetTask[]) ?? [])
   }, [])
 
+  const fetchRecurringTasks = useCallback(async () => {
+    if (!teammateId) return
+    const { data } = await supabase
+      .from('recurring_tasks')
+      .select('*')
+      .eq('teammate_id', teammateId)
+      .eq('is_active', true)
+    setRecurringTasks((data as RecurringTask[]) ?? [])
+  }, [teammateId])
+
   useEffect(() => {
     if (!teammate) return
     Promise.all([fetchTasks(), fetchStreak(), fetchPresets()]).then(() => setLoading(false))
@@ -232,6 +242,7 @@ export default function TeammatePage({ params }: { params: Promise<{ teammateId:
         recurrence_days: null,
         is_active: true,
       })
+      await fetchRecurringTasks()
     }
 
     setForm(DEFAULT_FORM)
@@ -278,6 +289,7 @@ export default function TeammatePage({ params }: { params: Promise<{ teammateId:
         recurrence_days: null,
         is_active: true,
       })
+      await fetchRecurringTasks()
     }
 
     setShowPresetModal(false)
@@ -293,13 +305,22 @@ export default function TeammatePage({ params }: { params: Promise<{ teammateId:
 
     const { error } = await supabase.from('daily_tasks').delete().eq('id', task.id)
 
-    if (scope === 'forever' && task.preset_task_id) {
-      await supabase
-        .from('recurring_tasks')
-        .delete()
-        .eq('teammate_id', task.teammate_id)
-        .eq('preset_task_id', task.preset_task_id)
-      setRecurringTasks(prev => prev.filter(rt => rt.preset_task_id !== task.preset_task_id))
+    if (scope === 'forever') {
+      if (task.preset_task_id) {
+        await supabase
+          .from('recurring_tasks')
+          .delete()
+          .eq('teammate_id', task.teammate_id)
+          .eq('preset_task_id', task.preset_task_id)
+        setRecurringTasks(prev => prev.filter(rt => rt.preset_task_id !== task.preset_task_id))
+      } else {
+        await supabase
+          .from('recurring_tasks')
+          .delete()
+          .eq('teammate_id', task.teammate_id)
+          .eq('name', task.name)
+        setRecurringTasks(prev => prev.filter(rt => !(rt.preset_task_id === null && rt.name === task.name)))
+      }
     }
 
     if (error) await fetchTasks()
@@ -566,8 +587,10 @@ export default function TeammatePage({ params }: { params: Promise<{ teammateId:
       {taskToDelete && (
         <DeleteConfirmModal
           task={taskToDelete}
-          isRecurring={recurringTasks.some(
-            rt => rt.preset_task_id === taskToDelete.preset_task_id && taskToDelete.preset_task_id !== null
+          isRecurring={recurringTasks.some(rt =>
+            taskToDelete.preset_task_id !== null
+              ? rt.preset_task_id === taskToDelete.preset_task_id
+              : rt.preset_task_id === null && rt.name === taskToDelete.name
           )}
           onCancel={() => setTaskToDelete(null)}
           onDeleteToday={() => deleteTask(taskToDelete, 'today')}
