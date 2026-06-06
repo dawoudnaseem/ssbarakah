@@ -44,10 +44,10 @@ html, body {
   animation: bob 3s ease-in-out infinite;
 }
 
-/* translateY-only bob — safe to layer under a separate tilt transform */
+/* Bob with gentle rotate — safe on inner wrapper since tilt lives on a separate parent */
 @keyframes bob-simple {
-  0%, 100% { transform: translateY(0px); }
-  50%       { transform: translateY(-7px); }
+  0%, 100% { transform: translateY(0px) rotate(-1.5deg); }
+  50%       { transform: translateY(-11px) rotate(1.5deg); }
 }
 .animate-bob-simple {
   animation: bob-simple 3.5s ease-in-out infinite;
