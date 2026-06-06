@@ -277,7 +277,7 @@ export default function ShipDashboard() {
         */}
         <div
           className="absolute pointer-events-none"
-          style={{ left: '50%', bottom: '26%', transform: 'translateX(-50%)', zIndex: 2 }}
+          style={{ left: '50%', bottom: '18%', transform: 'translateX(-50%)', zIndex: 2 }}
           aria-hidden
         >
           {/* Tilt */}
