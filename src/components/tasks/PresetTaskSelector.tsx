@@ -82,10 +82,41 @@ interface PresetTaskSelectorProps {
   onClose: () => void
 }
 
+const ISLAMIC_ORDER = [
+  'Seek Ilm',
+  'Attend Halaqa/Dars in Person',
+  'Read Quran',
+  'Memorize Quran',
+  'Review Quran',
+  'Morning adhkar',
+  'Evening adhkar',
+  'Give sadaqah',
+]
+
+const REGULAR_ORDER = [
+  'Journal',
+  'Workout',
+  'Reading Regular Book',
+  'Study',
+  'Apply to jobs',
+  'Clean room',
+]
+
+function sortByOrder(tasks: PresetTask[], order: string[]): PresetTask[] {
+  return [...tasks].sort((a, b) => {
+    const ai = order.indexOf(a.name)
+    const bi = order.indexOf(b.name)
+    if (ai === -1 && bi === -1) return 0
+    if (ai === -1) return 1
+    if (bi === -1) return -1
+    return ai - bi
+  })
+}
+
 export function PresetTaskSelector({ presets, onAdd, onClose }: PresetTaskSelectorProps) {
   const [recurring, setRecurring] = useState(false)
-  const islamic = presets.filter(p => p.is_islamic)
-  const regular = presets.filter(p => !p.is_islamic)
+  const islamic = sortByOrder(presets.filter(p => p.is_islamic), ISLAMIC_ORDER)
+  const regular = sortByOrder(presets.filter(p => !p.is_islamic), REGULAR_ORDER)
 
   return (
     <div

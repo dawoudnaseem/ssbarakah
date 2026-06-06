@@ -274,7 +274,7 @@ export default function TeammatePage({ params }: { params: Promise<{ teammateId:
 
     if (error || !inserted) return
 
-    if (recurring && preset.can_be_recurring) {
+    if (recurring) {
       await supabase.from('recurring_tasks').insert({
         teammate_id: teammateId,
         preset_task_id: preset.id,
@@ -502,16 +502,24 @@ export default function TeammatePage({ params }: { params: Promise<{ teammateId:
                   <option value="work">Work</option>
                 </select>
               </Field>
-              <Field label="Points">
-                <input
-                  type="number"
-                  min={1}
-                  max={1000}
-                  value={form.points}
-                  onChange={e => setForm(f => ({ ...f, points: Number(e.target.value) }))}
-                  className="w-full rounded-lg px-3 py-2 text-sm outline-none"
-                  style={inputStyle}
-                />
+              <Field label="Task Size">
+                <div className="flex gap-2">
+                  {([['Small', 5], ['Medium', 10], ['Large', 15]] as [string, number][]).map(([label, val]) => (
+                    <button
+                      key={val}
+                      type="button"
+                      onClick={() => setForm(f => ({ ...f, points: val }))}
+                      className="flex-1 rounded-lg px-3 py-2 text-sm font-medium transition-colors"
+                      style={form.points === val
+                        ? { background: '#9DD8F7', color: '#061826', border: '1.5px solid #9DD8F7' }
+                        : { ...inputStyle, border: '1.5px solid rgba(157,216,247,0.25)' }
+                      }
+                    >
+                      {label}<br />
+                      <span className="text-xs opacity-75">{val} pts</span>
+                    </button>
+                  ))}
+                </div>
               </Field>
             </div>
 
