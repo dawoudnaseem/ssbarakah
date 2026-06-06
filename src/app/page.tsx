@@ -36,15 +36,15 @@ function getMissionStatus(progress: number, isSunk: boolean): MissionStatus {
 }
 
 const STATUS_COLORS: Record<MissionStatus, string> = {
-  'CRITICAL':       '#DC2626',
-  'DAMAGED':        '#F59E0B',
-  'STABILIZING':    '#9DD8F7',
-  'ALMOST REPAIRED':'#22C55E',
-  'SURVIVED':       '#22C55E',
-  'SUNK':           '#DC2626',
+  'CRITICAL':        '#DC2626',
+  'DAMAGED':         '#F59E0B',
+  'STABILIZING':     '#9DD8F7',
+  'ALMOST REPAIRED': '#22C55E',
+  'SURVIVED':        '#22C55E',
+  'SUNK':            '#DC2626',
 }
 
-// Worker colours and deck positions (% of ship SVG 340×170)
+// Worker colours + positions relative to 340×170 ship SVG
 const WORKERS = [
   { color: '#9DD8F7', x: '34%', y: '56%' },
   { color: '#22C55E', x: '43%', y: '52%' },
@@ -106,7 +106,8 @@ export default function ShipDashboard() {
     const tasks = (taskData ?? []) as DailyTask[]
     const result = resultData as DailyResult | null
     const completions = (completionData ?? []) as Array<{
-      id: string; completed_at: string; points_awarded: number; teammate_id: string; daily_task_id: string; task_date: string
+      id: string; completed_at: string; points_awarded: number
+      teammate_id: string; daily_task_id: string; task_date: string
     }>
 
     setTeammates(tms)
@@ -173,27 +174,41 @@ export default function ShipDashboard() {
   }
 
   return (
-    <div className="relative" style={{ background: '#061826' }}>
+    <div style={{ background: '#020810' }}>
 
-      {/* ═══════════════════════════════════════════════════════════════════════
-          LAYER 0 — full-screen Arctic scene (scenery only, no pointer events)
-      ════════════════════════════════════════════════════════════════════════ */}
+      {/* ═══════════════════════════════════════════════════════════════
+          SCENE — full-viewport Arctic surface (sticky so it stays put
+          while the page scrolls into the abyss below)
+      ══════════════════════════════════════════════════════════════ */}
       <div
-        className="sticky top-0 left-0 w-full pointer-events-none overflow-hidden"
-        style={{ height: '100svh', background: 'linear-gradient(180deg, #061826 0%, #0B3558 100%)', zIndex: 0 }}
-        aria-hidden
+        className="sticky top-0 w-full overflow-hidden"
+        style={{ height: '100svh', background: 'linear-gradient(180deg, #061826 0%, #0B3558 100%)', zIndex: 1 }}
       >
-        {/* Stars */}
-        {STARS.map((s, i) => (
-          <div
-            key={i}
-            className="absolute rounded-full bg-white"
-            style={{ width: s.w, height: s.w, top: s.top, left: s.left, opacity: s.op }}
-          />
-        ))}
 
-        {/* Small iceberg — left */}
-        <div className="absolute animate-float" style={{ bottom: '26%', left: '4%', animationDelay: '0.8s' }}>
+        {/* Stars — behind everything */}
+        <div className="absolute inset-0 pointer-events-none" aria-hidden style={{ zIndex: 0 }}>
+          {STARS.map((s, i) => (
+            <div key={i} className="absolute rounded-full bg-white"
+              style={{ width: s.w, height: s.w, top: s.top, left: s.left, opacity: s.op }} />
+          ))}
+        </div>
+
+        {/* Dark back wave — behind ship + icebergs */}
+        <div className="absolute bottom-0 left-0 right-0 pointer-events-none overflow-hidden"
+          style={{ height: '42%', zIndex: 1 }} aria-hidden>
+          <div className="animate-wave flex h-full" style={{ width: '200%' }}>
+            <svg viewBox="0 0 800 100" preserveAspectRatio="none" className="h-full" style={{ width: '50%' }}>
+              <path d="M0 35 Q100 10 200 35 Q300 60 400 35 Q500 10 600 35 Q700 60 800 35 L800 100 L0 100 Z" fill="#041220" opacity="0.95" />
+            </svg>
+            <svg viewBox="0 0 800 100" preserveAspectRatio="none" className="h-full" style={{ width: '50%' }}>
+              <path d="M0 35 Q100 10 200 35 Q300 60 400 35 Q500 10 600 35 Q700 60 800 35 L800 100 L0 100 Z" fill="#041220" opacity="0.95" />
+            </svg>
+          </div>
+        </div>
+
+        {/* Small iceberg — left, sits on waterline */}
+        <div className="absolute pointer-events-none animate-float"
+          style={{ bottom: '37%', left: '4%', zIndex: 2, animationDelay: '0.8s' }} aria-hidden>
           <svg width="70" height="90" viewBox="0 0 70 90" fill="none">
             <polygon points="35,0 70,56 0,56" fill="#9DD8F7" opacity="0.75" />
             <polygon points="35,0 70,56 0,56" fill="white" opacity="0.12" />
@@ -201,8 +216,9 @@ export default function ShipDashboard() {
           </svg>
         </div>
 
-        {/* Large threatening iceberg — right */}
-        <div className="absolute animate-float" style={{ bottom: '24%', right: '3%', animationDelay: '1.8s' }}>
+        {/* Large threatening iceberg — right, sits on waterline */}
+        <div className="absolute pointer-events-none animate-float"
+          style={{ bottom: '33%', right: '3%', zIndex: 2, animationDelay: '1.8s' }} aria-hidden>
           <svg width="130" height="200" viewBox="0 0 130 200" fill="none">
             <polygon points="65,0 130,110 0,110" fill="#9DD8F7" opacity="0.9" />
             <polygon points="65,0 130,110 0,110" fill="white" opacity="0.18" />
@@ -212,18 +228,19 @@ export default function ShipDashboard() {
           </svg>
         </div>
 
-        {/* Ship — big, centered, tilting */}
+        {/* Ship — big, centered, tilts on waterline */}
         <div
-          className="absolute animate-bob"
+          className="absolute pointer-events-none animate-bob"
           style={{
             left: '50%',
-            bottom: '26%',
-            transform: `translateX(-50%) rotate(${shipTilt}deg) ${isSunk ? 'translateY(80px)' : ''}`,
+            bottom: '36%',
+            transform: `translateX(-50%) rotate(${shipTilt}deg) ${isSunk ? 'translateY(120px)' : ''}`,
             transition: 'transform 1.5s ease-in-out',
             transformOrigin: 'center bottom',
+            zIndex: 2,
           }}
+          aria-hidden
         >
-          {/* Workers on deck (positioned relative to ship SVG) */}
           <div className="relative" style={{ width: '340px', height: '170px' }}>
             <svg width="340" height="170" viewBox="0 0 340 170" fill="none">
               <path d="M30 110 L310 110 L290 148 L50 148 Z" fill="#061826" stroke="#9DD8F7" strokeWidth="2" />
@@ -251,127 +268,99 @@ export default function ShipDashboard() {
               <path d="M258 105 L270 115" stroke="#DC2626" strokeWidth="1.5" fill="none" opacity="0.6" strokeLinecap="round" />
             </svg>
 
-            {/* Worker circles — absolute over the SVG */}
+            {/* Workers on deck */}
             {WORKERS.map((w, i) => (
-              <div
-                key={i}
-                className={workerClass}
-                style={{
-                  position: 'absolute',
-                  left: w.x,
-                  top: w.y,
-                  width: '13px',
-                  height: '13px',
-                  borderRadius: '50%',
-                  background: w.color,
-                  transform: 'translate(-50%, -50%)',
-                  boxShadow: `0 0 6px ${w.color}80`,
-                  animationDelay: `${i * 0.12}s`,
-                }}
-              />
+              <div key={i} className={workerClass} style={{
+                position: 'absolute', left: w.x, top: w.y,
+                width: '13px', height: '13px', borderRadius: '50%',
+                background: w.color, transform: 'translate(-50%, -50%)',
+                boxShadow: `0 0 6px ${w.color}80`,
+                animationDelay: `${i * 0.12}s`,
+              }} />
             ))}
           </div>
         </div>
 
-        {/* Wave layer — bottom 28% */}
-        <div className="absolute bottom-0 left-0 right-0 pointer-events-none" style={{ height: '28%' }}>
-          <div className="absolute inset-0 overflow-hidden">
-            <div className="animate-wave flex h-full" style={{ width: '200%' }}>
-              <svg viewBox="0 0 800 100" preserveAspectRatio="none" className="h-full" style={{ width: '50%' }}>
-                <path d="M0 40 Q100 15 200 40 Q300 65 400 40 Q500 15 600 40 Q700 65 800 40 L800 100 L0 100 Z" fill="#061826" opacity="0.6" />
-              </svg>
-              <svg viewBox="0 0 800 100" preserveAspectRatio="none" className="h-full" style={{ width: '50%' }}>
-                <path d="M0 40 Q100 15 200 40 Q300 65 400 40 Q500 15 600 40 Q700 65 800 40 L800 100 L0 100 Z" fill="#061826" opacity="0.6" />
-              </svg>
-            </div>
+        {/* Light front wave — IN FRONT of ship and icebergs */}
+        <div className="absolute bottom-0 left-0 right-0 pointer-events-none overflow-hidden"
+          style={{ height: '38%', zIndex: 3 }} aria-hidden>
+          <div className="animate-wave flex h-full" style={{ width: '200%', animationDuration: '6s', animationDelay: '-2s' }}>
+            <svg viewBox="0 0 800 100" preserveAspectRatio="none" className="h-full" style={{ width: '50%' }}>
+              <path d="M0 45 Q100 22 200 45 Q300 68 400 45 Q500 22 600 45 Q700 68 800 45 L800 100 L0 100 Z" fill="#0B3558" opacity="0.92" />
+            </svg>
+            <svg viewBox="0 0 800 100" preserveAspectRatio="none" className="h-full" style={{ width: '50%' }}>
+              <path d="M0 45 Q100 22 200 45 Q300 68 400 45 Q500 22 600 45 Q700 68 800 45 L800 100 L0 100 Z" fill="#0B3558" opacity="0.92" />
+            </svg>
           </div>
-          <div className="absolute inset-0 overflow-hidden">
-            <div className="animate-wave flex h-full" style={{ width: '200%', animationDuration: '6s', animationDelay: '-2s' }}>
-              <svg viewBox="0 0 800 100" preserveAspectRatio="none" className="h-full" style={{ width: '50%' }}>
-                <path d="M0 50 Q100 28 200 50 Q300 72 400 50 Q500 28 600 50 Q700 72 800 50 L800 100 L0 100 Z" fill="#0B3558" opacity="0.85" />
-              </svg>
-              <svg viewBox="0 0 800 100" preserveAspectRatio="none" className="h-full" style={{ width: '50%' }}>
-                <path d="M0 50 Q100 28 200 50 Q300 72 400 50 Q500 28 600 50 Q700 72 800 50 L800 100 L0 100 Z" fill="#0B3558" opacity="0.85" />
-              </svg>
-            </div>
-          </div>
+        </div>
+
+        {/* Mission status chip — top left, over the scene */}
+        <div className="absolute top-3 left-4 pointer-events-auto" style={{ zIndex: 10 }}>
+          <span className="text-xs font-bold px-3 py-1.5 rounded-full tracking-widest uppercase"
+            style={{ background: `${statusColor}25`, border: `1px solid ${statusColor}70`, color: statusColor, backdropFilter: 'blur(8px)' }}>
+            ⚓ {status}
+          </span>
+        </div>
+
+        {/* Countdown — top right */}
+        <div className="absolute top-3 right-4 pointer-events-none" style={{ zIndex: 10 }}>
+          <span className="text-xs font-mono px-3 py-1.5 rounded-full"
+            style={{ background: 'rgba(6,24,38,0.6)', border: '1px solid rgba(157,216,247,0.2)', color: 'rgba(157,216,247,0.8)', backdropFilter: 'blur(8px)' }}>
+            ⏱ {countdown}
+          </span>
+        </div>
+
+        {/* Scroll hint */}
+        <div className="absolute bottom-6 left-1/2 -translate-x-1/2 pointer-events-none flex flex-col items-center gap-1"
+          style={{ zIndex: 10, opacity: 0.45 }}>
+          <p className="text-xs tracking-widest uppercase" style={{ color: '#9DD8F7' }}>scroll to dive</p>
+          <div style={{ width: '1px', height: '24px', background: 'linear-gradient(180deg, #9DD8F7, transparent)' }} />
         </div>
       </div>
 
-      {/* ═══════════════════════════════════════════════════════════════════════
-          LAYER 1 — widgets overlaid on top of the scene
-      ════════════════════════════════════════════════════════════════════════ */}
-
-      {/* Floating top-bar: mission status chip + countdown — sits over the sky */}
-      <div
-        className="fixed top-14 left-0 right-0 flex items-center justify-between px-4 pt-3 pb-2 pointer-events-none"
-        style={{ zIndex: 20 }}
-      >
-        <span
-          className="text-xs font-bold px-3 py-1.5 rounded-full tracking-widest uppercase pointer-events-auto"
-          style={{ background: `${statusColor}25`, border: `1px solid ${statusColor}70`, color: statusColor, backdropFilter: 'blur(8px)' }}
-        >
-          ⚓ {status}
-        </span>
-        <span
-          className="text-xs font-mono px-3 py-1.5 rounded-full"
-          style={{ background: 'rgba(6,24,38,0.6)', border: '1px solid rgba(157,216,247,0.2)', color: 'rgba(157,216,247,0.8)', backdropFilter: 'blur(8px)' }}
-        >
-          ⏱ {countdown}
-        </span>
-      </div>
-
-      {/* Progress bar panel — docked to bottom of the scene, over waves */}
-      <div
-        className="fixed left-0 right-0"
-        style={{ bottom: 0, zIndex: 20 }}
-      >
-        <div
-          style={{
-            background: 'rgba(6,24,38,0.82)',
-            backdropFilter: 'blur(18px)',
-            borderTop: '1px solid rgba(157,216,247,0.18)',
-          }}
-        >
+      {/* ═══════════════════════════════════════════════════════════════
+          PROGRESS BAR — fixed overlay, always visible
+      ══════════════════════════════════════════════════════════════ */}
+      <div className="fixed left-0 right-0 bottom-0" style={{ zIndex: 50 }}>
+        <div style={{ background: 'rgba(6,24,38,0.88)', backdropFilter: 'blur(18px)', borderTop: '1px solid rgba(157,216,247,0.18)' }}>
           <div className="max-w-2xl mx-auto px-5 py-4">
             <div className="flex items-center justify-between mb-2">
               <p className="text-xs font-semibold uppercase tracking-widest" style={{ color: '#9DD8F7' }}>Ship Repairs</p>
               <p className="text-sm font-bold" style={{ color: '#9DD8F7' }}>{progress}%</p>
             </div>
             <div className="w-full h-2.5 rounded-full overflow-hidden" style={{ background: 'rgba(157,216,247,0.12)' }}>
-              <div
-                className="h-full rounded-full transition-all duration-1000"
-                style={{ width: `${progress}%`, background: progress === 100 ? '#22C55E' : progress <= 25 ? '#DC2626' : '#9DD8F7' }}
-              />
+              <div className="h-full rounded-full transition-all duration-1000"
+                style={{ width: `${progress}%`, background: progress === 100 ? '#22C55E' : progress <= 25 ? '#DC2626' : '#9DD8F7' }} />
             </div>
-            {allTasks.filter(t => t.is_required).length === 0 && (
-              <p className="text-xs mt-1.5" style={{ color: 'rgba(242,251,255,0.4)' }}>No repairs assigned yet — crew must add tasks.</p>
-            )}
           </div>
         </div>
       </div>
 
-      {/* Scroll spacer — the sticky scene takes 100svh, so we push content below it */}
-      <div style={{ height: '100svh' }} />
+      {/* ═══════════════════════════════════════════════════════════════
+          ABYSS — deep ocean transition into the data section
+      ══════════════════════════════════════════════════════════════ */}
+      <div style={{ height: '120px', background: 'linear-gradient(180deg, #0B3558 0%, #020810 100%)', position: 'relative', zIndex: 2 }} />
 
-      {/* ═══════════════════════════════════════════════════════════════════════
-          LAYER 2 — scrollable data panels below the scene
-      ════════════════════════════════════════════════════════════════════════ */}
-      <div
-        className="relative px-4 py-6 flex flex-col gap-5"
-        style={{ background: 'linear-gradient(180deg, #061826 0%, #0B3558 100%)', zIndex: 10, minHeight: '100vh' }}
-      >
+      {/* ═══════════════════════════════════════════════════════════════
+          DATA SECTION — deep underwater widgets
+      ══════════════════════════════════════════════════════════════ */}
+      <div className="relative px-4 py-6 flex flex-col gap-5" style={{ background: '#020810', zIndex: 2 }}>
         <div className="max-w-2xl mx-auto w-full flex flex-col gap-5">
 
-          {/* Sunk failure callout */}
+          {/* Deep ocean label */}
+          <div className="flex items-center gap-3">
+            <div style={{ flex: 1, height: '1px', background: 'rgba(157,216,247,0.08)' }} />
+            <p className="text-xs tracking-widest uppercase" style={{ color: 'rgba(157,216,247,0.25)' }}>— deep waters —</p>
+            <div style={{ flex: 1, height: '1px', background: 'rgba(157,216,247,0.08)' }} />
+          </div>
+
+          {/* Sunk callout */}
           {isSunk && (
-            <div
-              className="rounded-2xl p-5 text-center"
-              style={{ background: 'rgba(220,38,38,0.1)', border: '1px solid rgba(220,38,38,0.4)' }}
-            >
+            <div className="rounded-2xl p-5 text-center"
+              style={{ background: 'rgba(220,38,38,0.08)', border: '1px solid rgba(220,38,38,0.35)' }}>
               <p className="text-lg font-bold mb-1" style={{ color: '#DC2626' }}>💀 The ship has sunk.</p>
               {chudEntry && (
-                <p className="text-sm" style={{ color: 'rgba(242,251,255,0.7)' }}>
+                <p className="text-sm" style={{ color: 'rgba(242,251,255,0.65)' }}>
                   Chud of the Day: <strong>{chudEntry.teammate.name}</strong> — {chudEntry.missedRequired} tasks missed
                 </p>
               )}
@@ -380,28 +369,24 @@ export default function ShipDashboard() {
 
           {/* Chad + Chud badges */}
           <div className="grid grid-cols-2 gap-3">
-            <BadgeCard emoji="⚓" label="Chad of the Day" name={chadEntry?.teammate.name ?? '—'} color="#F59E0B"
-              subtitle={chadEntry ? `${chadEntry.points} pts` : 'Not yet assigned'} />
-            <BadgeCard emoji="💀" label="Chud of the Day" name={chudEntry?.teammate.name ?? 'None'} color="#DC2626"
-              subtitle={chudEntry ? `${chudEntry.missedRequired} missed` : 'Everyone held it down'} />
+            <BadgeCard emoji="⚓" label="Chad of the Day" name={chadEntry?.teammate.name ?? '—'}
+              color="#F59E0B" subtitle={chadEntry ? `${chadEntry.points} pts` : 'Not yet assigned'} />
+            <BadgeCard emoji="💀" label="Chud of the Day" name={chudEntry?.teammate.name ?? 'None'}
+              color="#DC2626" subtitle={chudEntry ? `${chudEntry.missedRequired} missed` : 'Everyone held it down'} />
           </div>
 
           {/* Leaderboard */}
           <section>
-            <p className="text-xs font-semibold uppercase tracking-widest mb-3" style={{ color: '#9DD8F7' }}>Crew Leaderboard</p>
+            <p className="text-xs font-semibold uppercase tracking-widest mb-3" style={{ color: 'rgba(157,216,247,0.6)' }}>Crew Leaderboard</p>
             <div className="flex flex-col gap-2">
               {leaderboard.map((entry, i) => (
-                <div
-                  key={entry.teammate.id}
-                  className="flex items-center gap-3 rounded-xl px-4 py-3"
-                  style={{ background: 'rgba(11,53,88,0.5)', border: '1px solid rgba(157,216,247,0.1)' }}
-                >
-                  <span className="text-sm font-bold w-5 text-center" style={{ color: i === 0 ? '#F59E0B' : 'rgba(242,251,255,0.4)' }}>
-                    {i + 1}
-                  </span>
+                <div key={entry.teammate.id} className="flex items-center gap-3 rounded-xl px-4 py-3"
+                  style={{ background: 'rgba(9,26,44,0.8)', border: '1px solid rgba(157,216,247,0.07)' }}>
+                  <span className="text-sm font-bold w-5 text-center"
+                    style={{ color: i === 0 ? '#F59E0B' : 'rgba(242,251,255,0.3)' }}>{i + 1}</span>
                   <div className="flex-1 min-w-0">
                     <p className="text-sm font-medium" style={{ color: '#F2FBFF' }}>{entry.teammate.name}</p>
-                    <p className="text-xs" style={{ color: 'rgba(242,251,255,0.45)' }}>
+                    <p className="text-xs" style={{ color: 'rgba(242,251,255,0.35)' }}>
                       {entry.completedRequired}/{entry.totalRequired} required
                       {entry.missedRequired > 0 && ` · ${entry.missedRequired} missed`}
                     </p>
@@ -410,31 +395,26 @@ export default function ShipDashboard() {
                 </div>
               ))}
               {leaderboard.length === 0 && (
-                <p className="text-sm" style={{ color: 'rgba(242,251,255,0.4)' }}>No crew data yet.</p>
+                <p className="text-sm" style={{ color: 'rgba(242,251,255,0.3)' }}>No crew data yet.</p>
               )}
             </div>
           </section>
 
-          {/* Recent completions feed */}
+          {/* Recent completions */}
           <section>
-            <p className="text-xs font-semibold uppercase tracking-widest mb-3" style={{ color: '#9DD8F7' }}>Recent Repairs</p>
+            <p className="text-xs font-semibold uppercase tracking-widest mb-3" style={{ color: 'rgba(157,216,247,0.6)' }}>Recent Repairs</p>
             {recentFeed.length === 0 ? (
-              <p className="text-sm" style={{ color: 'rgba(242,251,255,0.4)' }}>No completions yet today.</p>
+              <p className="text-sm" style={{ color: 'rgba(242,251,255,0.3)' }}>No completions yet today.</p>
             ) : (
               <div className="flex flex-col gap-2">
                 {recentFeed.map(c => (
-                  <div
-                    key={c.id}
-                    className="flex items-center justify-between gap-3 rounded-xl px-4 py-2.5"
-                    style={{ background: 'rgba(11,53,88,0.35)', border: '1px solid rgba(157,216,247,0.08)' }}
-                  >
+                  <div key={c.id} className="flex items-center justify-between gap-3 rounded-xl px-4 py-2.5"
+                    style={{ background: 'rgba(9,26,44,0.6)', border: '1px solid rgba(157,216,247,0.06)' }}>
                     <div className="min-w-0">
                       <p className="text-sm truncate" style={{ color: '#F2FBFF' }}>
                         <span style={{ color: '#9DD8F7' }}>{c.teammate_name}</span> — {c.task_name}
                       </p>
-                      <p className="text-xs" style={{ color: 'rgba(242,251,255,0.4)' }}>
-                        {formatTime(c.completed_at)}
-                      </p>
+                      <p className="text-xs" style={{ color: 'rgba(242,251,255,0.3)' }}>{formatTime(c.completed_at)}</p>
                     </div>
                     <span className="text-xs font-bold shrink-0" style={{ color: '#22C55E' }}>+{c.points_awarded}</span>
                   </div>
@@ -443,11 +423,12 @@ export default function ShipDashboard() {
             )}
           </section>
 
-          {/* Bottom padding so content clears the fixed progress bar */}
+          {/* Bottom padding clears the fixed progress bar */}
           <div style={{ height: '80px' }} />
 
         </div>
       </div>
+
     </div>
   )
 }
@@ -458,10 +439,11 @@ function BadgeCard({ emoji, label, name, color, subtitle }: {
   emoji: string; label: string; name: string; color: string; subtitle: string
 }) {
   return (
-    <div className="rounded-xl p-4 flex flex-col gap-1" style={{ background: `${color}10`, border: `1px solid ${color}40` }}>
+    <div className="rounded-xl p-4 flex flex-col gap-1"
+      style={{ background: `${color}08`, border: `1px solid ${color}35` }}>
       <p className="text-xs font-semibold uppercase tracking-widest" style={{ color }}>{emoji} {label}</p>
       <p className="text-base font-bold" style={{ color: '#F2FBFF' }}>{name}</p>
-      <p className="text-xs" style={{ color: 'rgba(242,251,255,0.5)' }}>{subtitle}</p>
+      <p className="text-xs" style={{ color: 'rgba(242,251,255,0.4)' }}>{subtitle}</p>
     </div>
   )
 }
