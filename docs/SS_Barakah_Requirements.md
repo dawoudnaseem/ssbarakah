@@ -1225,20 +1225,49 @@ Tooltip should show:
 
 ## 17. Leaderboard Requirements
 
-The leaderboard should reset daily.
+The leaderboard resets daily. It lives in the deep-abyss section of the ship dashboard (`/`), below the badge cards.
 
-It should show:
+### 17.1 Row Layout
 
-- Teammate rank
-- Name
-- Points earned today
-- Completed required tasks
-- Missed required tasks
-- Badge, if any
+Each crew member gets one row with this layout:
 
-Important:
+```
+[ rank ] [ avatar circle ] [ name  + badge ]      [ points ]
+                                                   [ status  ]
+```
 
-Daily leaderboard points reset every day, but historical points are saved in the stats page.
+**Rank** — number on the far left. #1 is amber (`#F59E0B`). All others are muted (`rgba(242,251,255,0.3)`).
+
+**Avatar circle** — 34×34px circle showing the teammate's first initial.
+- Rank #1: solid amber background, dark text.
+- All others: dark navy background (`#0B3558`), ice-blue text (`#9DD8F7`), subtle border.
+
+**Name + badge** — teammate name in white. If the teammate holds the Chad badge, show `⚓ CHAD` as a small amber pill inline after the name. If they hold the Chud badge, show `💀 CHUD` as a small red pill. Never show both on the same row.
+
+**Points** — `N pts` top-right. Amber for #1, ice-blue for others.
+
+**Status** — bottom-right, below points:
+- All required tasks done → `✓ all X/X tasks done` in green (`rgba(34,197,94,0.85)`), where X/X is `completedRequired/totalRequired`.
+- Any required task missed → `N missed` in red (`rgba(220,38,38,0.8)`), where N is `missedRequired`.
+
+**Row background:**
+- Rank #1: faint amber tint (`rgba(245,158,11,0.08)`) with amber border.
+- All others: dark navy (`rgba(9,26,44,0.8)`) with faint ice border.
+
+### 17.2 Data
+
+- Source: `task_completions` and `daily_tasks` for today, across all teammates.
+- Sorted by `points` descending.
+- Only today's data — historical points live on the `/history` page.
+- Empty state: display `"No crew data yet."` in muted text.
+
+### 17.3 Component
+
+Implemented as `src/components/leaderboard/Leaderboard.tsx`. Receives a `LeaderboardEntry[]` prop — no internal data fetching. `page.tsx` owns the polling (every 15 seconds) and passes data down.
+
+### 17.4 Recent Repairs Feed
+
+Immediately below the leaderboard: a "Recent Repairs" feed showing the last 10 task completions for today, newest first. Each item shows teammate name, task name, time completed, and points awarded. Implemented as `src/components/leaderboard/RecentRepairsFeed.tsx`, also prop-driven.
 
 ---
 
