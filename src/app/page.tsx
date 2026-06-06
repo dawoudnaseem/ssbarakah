@@ -285,7 +285,7 @@ export default function ShipDashboard() {
             {/* Bob */}
             <div className="animate-bob-simple">
               {/* Responsive ship container — scales down on narrow screens */}
-              <div style={{ width: 'min(340px, 85vw)', position: 'relative' }}>
+              <div style={{ width: 'min(520px, 92vw)', position: 'relative' }}>
                 <svg viewBox="0 0 340 170" style={{ width: '100%', height: 'auto', display: 'block' }} fill="none">
                   <path d="M30 110 L310 110 L290 148 L50 148 Z" fill="#061826" stroke="#9DD8F7" strokeWidth="2" />
                   <rect x="55" y="80" width="230" height="30" fill="#0B3558" stroke="#9DD8F7" strokeWidth="1.5" />
