@@ -2,7 +2,8 @@
 
 import { useEffect, useState, useCallback } from 'react'
 import { supabase } from '@/lib/supabaseClient'
-import { todayString } from '@/lib/dateUtils'
+import { todayString, yesterdayString } from '@/lib/dateUtils'
+import { finalizeDay } from '@/lib/finalization'
 import { calculateTeamProgress } from '@/lib/calculations'
 import type { Teammate, DailyTask, DailyResult } from '@/types/database'
 import type { LeaderboardEntry, RecentCompletion } from '@/types/leaderboard'
@@ -74,6 +75,17 @@ export default function ShipDashboard() {
   const [loading, setLoading] = useState(true)
 
   const fetchData = useCallback(async () => {
+    // Silently finalize yesterday if it hasn't been finalized yet
+    const yesterday = yesterdayString()
+    const { data: yesterdayResult } = await supabase
+      .from('daily_results')
+      .select('id')
+      .eq('result_date', yesterday)
+      .maybeSingle()
+    if (!yesterdayResult) {
+      try { await finalizeDay(yesterday) } catch { /* silent — background housekeeping */ }
+    }
+
     const [
       { data: tmData },
       { data: taskData },
