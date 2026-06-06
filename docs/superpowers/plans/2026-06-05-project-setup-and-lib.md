@@ -6,7 +6,9 @@
 
 **Architecture:** Next.js App Router with a `src/` directory. All Supabase interaction happens through a single typed client in `src/lib/supabaseClient.ts`. Business logic lives in focused single-responsibility files under `src/lib/`. Database types live in `src/types/database.ts` and are shared across the entire app. SQL migrations live in `supabase/migrations/` so they can be tracked in git and run manually in the Supabase dashboard.
 
-**Tech Stack:** Next.js 14 (App Router), TypeScript, Tailwind CSS, @supabase/supabase-js
+**Tech Stack:** Next.js 16 (App Router), TypeScript, Tailwind CSS, @supabase/supabase-js
+
+> **Note (2026-06-06):** This plan was written targeting Next.js 14 but the installed version is 16.2.7. Key difference: `params` in page components is a `Promise` — use `React.use(params)` in client components or `await params` in server components. The auth implementation below also shows the original `sessionStorage`-based code and admin code `"Dawoud Sink"` — both were updated in Task 3b. See `src/lib/auth.ts` for current values.
 
 ---
 

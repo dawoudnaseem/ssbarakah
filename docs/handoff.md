@@ -1,266 +1,320 @@
 # S.S. Barakah — Handoff Log
 
-> This file is appended after each task is completed. It provides context for continuing work across sessions.
+> This file is the single source of truth for any new session. Read it first, then read the documents it points to. Everything needed to continue work is here.
 
 ---
 
-<!-- Append task summaries below as work is completed. -->
+## How to Start a New Session
 
-## Tasks 1 & 2 — Project Setup & Core Library (completed 2026-06-05)
+Read these files in this order:
 
-### What was done
+1. **This file** (`docs/handoff.md`) — full history, decisions, and current state
+2. **`docs/todo.md`** — task list; find the first unchecked task
+3. **`docs/SS_Barakah_Requirements.md`** — full product requirements (source of truth for behaviour)
+4. **`docs/superpowers/specs/2026-06-05-ui-overhaul-design.md`** — UI overhaul spec (login page, nav bar, auth persistence, animations)
+5. **Any source files relevant to the next task** (paths are called out in each task section below)
 
-**Task 1 — Project scaffold & SQL migrations**
-- Initialized Next.js 14 with App Router, TypeScript, Tailwind CSS, and `src/` directory layout
-- Installed `@supabase/supabase-js@2.107.0`
-- Created `.env.local.example` (template) and `.env.local` (placeholder values — user must fill in real Supabase credentials)
-- Created `supabase/migrations/001_create_tables.sql` — all 7 tables: `teammates`, `preset_tasks`, `daily_tasks`, `recurring_tasks`, `task_completions`, `daily_results`, `teammate_daily_stats`
-- Created `supabase/migrations/002_seed_data.sql` — 4 initial teammates (Dawoud, Araf, Sufiyan, Nouho) + 9 Islamic preset tasks + 7 regular preset tasks
-
-**Task 2 — TypeScript types & core lib utilities**
-- Created `src/types/database.ts` — TypeScript interfaces for all 7 table row types
-- Created `src/lib/supabaseClient.ts` — singleton Supabase browser client from env vars
-- Created `src/lib/dateUtils.ts` — `toDateString`, `todayString`, `yesterdayString`, `tomorrowString`, `dayOfWeek`, `endOfDayHasPassed` — 10 unit tests, all passing
-- Created `src/lib/calculations.ts` — `calculateTeamProgress`, `calculateDailyPoints`, `calculateChad`, `calculateChud`, `getProgressState`, `calculateHeatmapValues`, `calculateCurrentStreak`, `calculateLongestStreak` — 26 unit tests, all passing
-- Created `src/lib/auth.ts` — `loginTeammate`, `logoutTeammate`, `getCurrentTeammate`, `validateAdminCode`, `setAdminSession`, `isAdminAuthenticated`, `clearAdminSession`, `changeTeammatePassword`
-- Created `src/lib/finalization.ts` — `finalizeDay` (idempotent orchestrator) + `createNextDayRecurringTasks` (with duplicate prevention)
-- Installed and configured Jest with `ts-jest`, `@types/jest`, `ts-node`, and path alias support (`@/*` → `src/*`)
-- Added `npm test` and `npm run test:watch` scripts to `package.json`
-
-### Important notes for next tasks
-
-- **Supabase credentials**: `.env.local` has placeholder values. Before running the app, create a Supabase project, run both SQL files (`001_create_tables.sql` then `002_seed_data.sql`) in the Supabase SQL editor, and paste the real project URL and anon key into `.env.local`.
-- **Passwords**: Auth uses `plain_password` comparison for MVP. Seed passwords are `dawoud123`, `araf123`, `sufiyan123`, `nouho123`. The `password_hash` column exists but is unused.
-- **Admin code**: Hardcoded as `"Dawoud Sink"` in `src/lib/auth.ts`. `validateAdminCode` trims whitespace before comparing.
-- **Finalization is idempotent**: Calling `finalizeDay(date)` twice safely no-ops on the second call.
-- **Recurring task day names**: `recurrence_days[]` stores full English day names (`"Friday"`, `"Monday"`, etc.). The `dayOfWeek()` helper uses noon local time to avoid DST off-by-one errors.
-- **TypeScript**: `tsconfig.json` has `"types": ["jest"]` added to suppress `describe`/`it`/`expect` errors in test files.
-
-### Next task
-
-Task 3 — Login Page (`/login`). Build the UI with Arctic theme (dark navy background, ship silhouette, iceberg). Wire up `loginTeammate()` from `src/lib/auth.ts`. Redirect to `/teammate/[id]` on success, show error on failure.
+Before writing any Next.js page or component, read:
+- `node_modules/next/dist/docs/01-app/03-api-reference/03-file-conventions/page.md`
+- Key fact: `params` is a `Promise` in Next.js 16. Use `React.use(params)` in client components or `await params` in server components.
 
 ---
 
-## Task 3 — Login Page (completed 2026-06-05)
+## Project Overview
 
-### What was done
-- Updated `src/app/globals.css` with Arctic color palette CSS variables, and keyframe animations: `wave` (looping ocean wave), `float` (iceberg bob), `bob` (ship gentle rocking)
-- Updated `src/app/layout.tsx` with correct app title ("S.S. Barakah") and tagline metadata; removed unused Geist Mono font
-- Created `src/app/login/page.tsx` — full login page with:
-  - Arctic gradient background (`#061826` → `#0B3558`)
-  - Procedurally placed star dots in upper portion
-  - Two SVG icebergs floating on the left and right (using `animate-float` with offset delay)
-  - SVG ship silhouette with mast, flag, cabin windows, and a red crack showing iceberg damage (using `animate-bob`)
-  - Frosted glass login card (backdrop-blur, semi-transparent `#0B3558`)
-  - Name and password inputs styled to match the theme
-  - "Board the Ship →" submit button; shows "Boarding..." while loading
-  - Error message box on failed login
-  - Calls `loginTeammate()` from `src/lib/auth.ts`; on success redirects to `/teammate/[id]`
-  - Animated SVG wave bar at the bottom of the page
-- Created `src/app/teammate/[teammateId]/page.tsx` — minimal placeholder so redirect after login doesn't 404
-- Updated `src/app/page.tsx` — root `/` now redirects to `/login`
+**S.S. Barakah** — a team productivity web app for a small friend group (Dawoud, Araf, Sufiyan, Nouho). Productivity is framed as a shared Arctic ship survival mission. Each day the ship has hit an iceberg; completing tasks = repairing the ship. If all required tasks are done by midnight, the ship survives. If anyone misses a required task, the ship sinks.
 
-### Important notes for next tasks
-- The stars on the login page use `Math.random()` — they re-randomize on each server render but are stable client-side. This is fine for MVP.
-- The teammate placeholder page at `/teammate/[teammateId]` just shows the ID. Task 4 will replace it with the full dashboard.
-- The `loginTeammate` function stores the full teammate row in `sessionStorage` under key `ss_barakah_teammate`.
-- Login flow: name + password → Supabase query → `plain_password` comparison → store in sessionStorage → redirect to `/teammate/[id]`.
+**Repo:** `https://github.com/dawoudnaseem/ssbarakah.git` (branch: `main`)
 
-### Next task
-Task 4 — Teammate Dashboard Page (`/teammate/[teammateId]`). Replace the placeholder with the full dashboard: teammate name, badge, today's tasks, points, add task, preset selector, recurring toggle, streak, heatmap placeholder, and Pomodoro placeholder.
+**Stack:** Next.js 16.2.7 · React · TypeScript · Tailwind CSS · Supabase (PostgreSQL)
+
+**Local path:** `/Users/da_nasss/Desktop/1- Addiction Combatting App/ssbarakah`
+
+**Run locally:** `npm run dev` → http://localhost:3000
+
+**Tests:** `npm test` (Jest + ts-jest) — currently 47 tests, all passing
 
 ---
 
-## Task 4 — Teammate Dashboard Page (completed 2026-06-05)
+## Environment Setup
 
-### What was done
-- Replaced the placeholder `/teammate/[teammateId]/page.tsx` with a full client-side dashboard
-- Used `React.use(params)` to unwrap the `Promise<{ teammateId }>` param (Next.js 16 requirement)
-- Auth guard: reads `getCurrentTeammate()` from sessionStorage; redirects to `/login` if absent
-- On load: fetches today's `daily_tasks`, last 365 days of `teammate_daily_stats` (for streak), and all `preset_tasks`
-- Recurring task seeding: on mount, queries active `recurring_tasks` for the teammate and inserts missing `daily_tasks` for today (with per-task duplicate check)
-- Task completion: marks `is_completed = true`, increments `completion_count`, inserts into `task_completions`; optimistic UI update with Supabase fallback re-fetch on error
-- Repeatable tasks: complete button disabled when `completion_count >= max_completions`; shows `count/max` label
+`.env.local` must contain real Supabase credentials (file is git-ignored):
+```
+NEXT_PUBLIC_SUPABASE_URL=https://your-project.supabase.co
+NEXT_PUBLIC_SUPABASE_ANON_KEY=your-anon-key-here
+```
+
+To set up from scratch: create a Supabase project, run `supabase/migrations/001_create_tables.sql` then `002_seed_data.sql` in the SQL editor, paste the URL and anon key into `.env.local`.
+
+---
+
+## Key Decisions & Permanent Rules
+
+These were decided in conversation and must not be reversed without explicit user instruction:
+
+| Decision | Value | Reason |
+|---|---|---|
+| Teammate session storage | `localStorage` | Persists across browser restarts; changed from `sessionStorage` in Task 3b |
+| Admin session storage | `sessionStorage` | Intentionally short-lived per tab |
+| Admin code | Hardcoded in `src/lib/auth.ts` | Intentionally NOT in any doc for security; check the file directly |
+| Auth: password comparison | Plain text (`plain_password`) for MVP | Speed; `password_hash` column exists for future upgrade |
+| Ship tilt on sinking | Ship sinks in place (translateY) — does NOT crash into iceberg | Design decision; iceberg stays as static background threat |
+| Real-time data on ship dashboard | Poll every 15 seconds | Supabase Realtime is free-tier-limited and adds complexity; 15s is responsive enough |
+| Worker characters | Coloured circles with CSS animations | Islamic values require no faces/realistic representation |
+| Ship dashboard (`/`) | Public — no auth required | Anyone can watch the team's progress |
+| Push to GitHub | After every confirmed task | User instruction — always push after user confirms task is done |
+| Next.js version | 16.2.7 (NOT 14 as some old docs say) | Installed version; params is a Promise |
+
+---
+
+## Seed Data (Passwords)
+
+| Name | Password |
+|---|---|
+| Dawoud | `dawoud123` |
+| Araf | `araf123` |
+| Sufiyan | `sufiyan123` |
+| Nouho | `nouho123` |
+
+---
+
+## Current File Structure
+
+```
+src/
+  app/
+    page.tsx                        — smart redirect: logged in → /teammate/[id], else → /login
+    globals.css                     — CSS variables + wave/float/bob keyframe animations
+    layout.tsx                      — root layout; includes <ConditionalNav />
+    login/
+      page.tsx                      — full-screen Arctic login (redesigned Task 3b)
+    teammate/
+      [teammateId]/
+        page.tsx                    — teammate dashboard (Task 4; uses React.use(params))
+    admin/
+      (not yet built — Task 11)
+    history/
+      (not yet built — Task 13)
+  components/
+    ConditionalNav.tsx              — hides NavBar on /login; renders h-14 spacer elsewhere
+    NavBar.tsx                      — fixed top bar; logo, nav links, avatar dropdown, hamburger
+    LoginModal.tsx                  — overlay login form triggered from NavBar
+    IcyErrorModal.tsx               — frosted glass error modal (red border, dismiss on click)
+  lib/
+    supabaseClient.ts               — singleton Supabase browser client
+    auth.ts                         — loginTeammate, logoutTeammate, getCurrentTeammate, admin helpers
+    dateUtils.ts                    — toDateString, todayString, yesterdayString, tomorrowString, dayOfWeek, endOfDayHasPassed
+    calculations.ts                 — all pure business logic functions (see §22.1 of requirements)
+    finalization.ts                 — finalizeDay (idempotent), createNextDayRecurringTasks
+  types/
+    database.ts                     — TypeScript interfaces for all 7 Supabase tables
+  __tests__/
+    dateUtils.test.ts               — 10 tests
+    calculations.test.ts            — 37 tests
+supabase/
+  migrations/
+    001_create_tables.sql
+    002_seed_data.sql
+docs/
+  handoff.md                        — THIS FILE
+  todo.md                           — task checklist
+  SS_Barakah_Requirements.md        — full PRD (source of truth)
+  superpowers/
+    specs/
+      2026-06-05-ui-overhaul-design.md   — UI overhaul spec
+    plans/
+      2026-06-05-project-setup-and-lib.md — historical plan (Tasks 1&2; stale code inside)
+```
+
+---
+
+## CSS Animations (globals.css)
+
+| Class | Keyframe | Use |
+|---|---|---|
+| `animate-wave` | `wave` — translateX loop | Ocean wave layer |
+| `animate-float` | `float` — translateY bob | Icebergs |
+| `animate-bob` | `bob` — translateY + slight rotate | Ship |
+
+CSS variables: `--navy: #061826`, `--ocean: #0B3558`, `--ice-blue: #9DD8F7`, `--frost: #F2FBFF`, `--warning: #F59E0B`, `--danger: #DC2626`, `--success: #22C55E`
+
+---
+
+## Completed Tasks
+
+### ✅ Tasks 1 & 2 — Project Setup & Core Library (2026-06-05)
+
+- Next.js 16 scaffolded with TypeScript, Tailwind, App Router, `src/` layout
+- Supabase SQL migrations: 7 tables (`teammates`, `preset_tasks`, `daily_tasks`, `recurring_tasks`, `task_completions`, `daily_results`, `teammate_daily_stats`)
+- Seed data: 4 teammates + 9 Islamic + 7 regular preset tasks
+- All `src/lib/` utilities created and tested
+- 36 unit tests passing at end of Task 2
+
+### ✅ Task 3 — Login Page v1 (2026-06-05, superseded by Task 3b)
+
+Original login page built (centered frosted card). This design was scrapped and replaced entirely in Task 3b.
+
+### ✅ Task 4 — Teammate Dashboard (2026-06-05)
+
+Full client-side dashboard at `/teammate/[teammateId]`:
+- Auth guard: reads `getCurrentTeammate()` from localStorage; redirects to `/login` if absent
+- Fetches today's `daily_tasks`, last 365 days of `teammate_daily_stats` (for streak), all `preset_tasks`
+- Recurring task seeding on mount (duplicate check per `(teammate_id, task_date, preset_task_id)`)
+- Task completion: optimistic UI update; Supabase re-fetch on error
+- Repeatable tasks: button disabled when `completion_count >= max_completions`; shows count/max
 - Stats row: Points Today, Tasks Done (required only), Streak in days
-- Badge display: shows "Chad of the Day" (amber) and/or "Chud of the Day" (red) when flags are set on teammate row
-- Add custom task form: all fields (name, description, category, points, is_required, is_repeatable, max_completions, is_recurring); inserts into `daily_tasks` and optionally `recurring_tasks`
-- Preset task modal: lists presets grouped by Islamic vs regular; recurring toggle applies to selection; inserts `daily_tasks` and optionally `recurring_tasks`
-- Heatmap: placeholder panel (Task 14 will populate it)
-- Navigation: Ship Dashboard (`/`) and History (`/history`) buttons; Logout button
-- Minimum 44px tap targets on all action buttons
-- Arctic styling consistent with login page (same color palette, frosted glass panels, `#061826`→`#0B3558` gradient)
+- Chad/Chud badge display
+- Add custom task form + Preset task modal (with recurring toggle)
+- Heatmap placeholder (Task 14 will populate)
+- Uses `React.use(params)` to unwrap `Promise<{ teammateId }>` (Next.js 16 requirement)
 
-### Important notes for next tasks
-- `params` is `Promise<{ teammateId: string }>` in Next.js 16 — use `React.use(params)` in client components, or `await params` in server components
-- The recurring seed runs on every mount; duplicate prevention is a `count` query per `(teammate_id, task_date, preset_task_id)` — custom tasks (no `preset_task_id`) are not seeded this way and won't duplicate
-- `current_chad` / `current_chud` on the `teammates` table are booleans set during `finalizeDay` (Task 12); until finalization runs they will be `false`
-- Points calculation counts `task.points * task.completion_count` for completed tasks (repeatable tasks earn points per completion)
+### ✅ UI Overhaul Design Session (2026-06-05)
 
-### Next task
-Task 5 — Daily Task Creation & Completion Logic. The main logic is already wired inside Task 4. Task 5 should verify: (1) recurring duplicate prevention works correctly at page load, (2) repeatable task completion button state is enforced, (3) points update after each completion, (4) task state syncs back from Supabase on completion error.
+No code written — design decisions made and documented. Produced:
+- `docs/superpowers/specs/2026-06-05-ui-overhaul-design.md`
+- Updated `docs/SS_Barakah_Requirements.md` (sections 6.1, 6.3, 8.1, 8.1a, 8.2, 18.2, 19, 20, 25.2, 27, 28)
+- Added Tasks 3b and 3c to `docs/todo.md`
 
----
+### ✅ Task 3b — Login Page Redesign & Auth Persistence (2026-06-06)
 
-## UI Overhaul Design Session (completed 2026-06-05)
+**Auth persistence:**
+- `src/lib/auth.ts`: `loginTeammate` → `localStorage.setItem` (was `sessionStorage`)
+- `logoutTeammate` → `localStorage.removeItem`
+- `getCurrentTeammate` → reads `localStorage`
+- Admin code updated (value in `auth.ts`; not documented here intentionally)
+- Admin session still uses `sessionStorage`
 
-### What was decided
+**IcyErrorModal (`src/components/IcyErrorModal.tsx`):**
+- Frosted glass overlay, red-tinted border (`rgba(220,38,38,0.5)`)
+- ❄️ icon, error message, Dismiss button
+- Dismisses on Dismiss click or outside-overlay click
 
-A full UI overhaul was designed and approved via brainstorming session. No code was written — this session produced design docs and updated all three planning documents. The implementation tasks are **Tasks 3b, 3c, and updates to Tasks 16/18** in `todo.md`.
-
-**Auth persistence**
-- Teammate session switches from `sessionStorage` to `localStorage` so users stay logged in across browser restarts and tab closures
-- Admin session intentionally stays in `sessionStorage` (short-lived per tab)
-- Admin code updated (hardcoded in `src/lib/auth.ts`) — old value `"Dawoud Sink"` is replaced; see `auth.ts` directly for the new value
-
-**Login page redesign (Task 3b)**
-- Old design (centered frosted card) is scrapped
-- New design: full-screen Arctic scene — "S.S. Barakah" title at top, large tilted ship SVG in the center, massive threatening iceberg on one side, smaller iceberg on the other, stars, animated waves at bottom
-- Login inputs move to a full-width frosted "Crew Access" panel docked to the bottom edge (horizontal row on desktop, stacked on mobile)
-- Failed login now shows an `IcyErrorModal` (frosted glass, red-tinted border) instead of an inline error message
-- New component: `src/components/IcyErrorModal.tsx`
-
-**Nav bar (Task 3c)**
-- Persistent fixed top bar on every page except `/login`
-- Implemented via `ConditionalNav` wrapper (`usePathname()` hides it on `/login`)
-- Desktop: logo left · Ship/History/Admin links center · context-aware right side
-  - Logged out: "Board Ship →" button opens a login modal (no page navigation)
-  - Logged in: teammate initial circle + name + dropdown (My Dashboard / Log Out)
-- Mobile: logo + right button always visible; center links collapse into hamburger drawer
-- Login modal: overlays current page, same Arctic styling, uses `IcyErrorModal` on failure, redirects to `/teammate/[id]` on success
-- New components: `src/components/NavBar.tsx`, `src/components/ConditionalNav.tsx`, `src/components/LoginModal.tsx`
-- After Task 3c: remove the bottom nav buttons from `/teammate/[teammateId]/page.tsx`
-
-**Animations (Task 16 updates)**
-- Daily intro crash animation (`src/components/IntroAnimation.tsx`):
-  - Plays once per day, gated by `localStorage` key `ss_barakah_last_intro`
-  - Ship zoomed in sailing across screen → Araf dialog → Dawoud dialog → everyone screams → iceberg slides in → red alarm flash + sound → screen shake → crack on hull → crossfade to dashboard
-  - Skip button fixed at bottom-right throughout
-  - Sound: short alarm clip in `public/sounds/alarm.mp3`; silent if autoplay blocked
-- End-of-day failure animation: ship sinks in place (does NOT crash into iceberg); failure overlay includes Chud badge callout with name, missed task count, and points
-
-### Documents updated
-- `docs/superpowers/specs/2026-06-05-ui-overhaul-design.md` — full design spec (new file)
-- `docs/SS_Barakah_Requirements.md` — sections 6.1, 6.3, 8.1, 8.1a (new nav bar section), 8.2 failure animation, 18.2 (intro crash), 19, 20, 25.2, 27, 28
-- `docs/todo.md` — tasks 1–4 marked ✅; Tasks 3b and 3c added; Tasks 11, 16, 18 updated
-
-### Next tasks
-Task 3b — Login Page Redesign (auth persistence + full-screen Arctic layout + IcyErrorModal)
-Then Task 3c — Nav Bar & Login Modal
-Then continue from Task 5 onward as originally planned.
-
----
-
-## Task 3b — Login Page Redesign & Auth Persistence (completed 2026-06-06)
-
-### What was done
-
-**Auth persistence (3b.1)**
-- `src/lib/auth.ts`: switched `loginTeammate` from `sessionStorage.setItem` to `localStorage.setItem`
-- `logoutTeammate()` now calls `localStorage.removeItem`
-- `getCurrentTeammate()` now reads from `localStorage`
-- Admin session remains in `sessionStorage` (unchanged)
-- Admin code updated from `"Dawoud Sink"` to `"8608 guzw"`
-
-**IcyErrorModal (3b.3)**
-- Created `src/components/IcyErrorModal.tsx`
-- Frosted glass overlay with red-tinted border (`rgba(220,38,38,0.5)`)
-- Dismisses on button click or outside-overlay click
-- Shows a ❄️ icon, error message text, and a "Dismiss" button
-
-**Login page redesign (3b.2)**
-- Full-screen Arctic gradient background — old centered card layout removed
-- "S.S. Barakah" title + tagline docked near the top
-- 30 pre-computed star positions (stable across server renders — no `Math.random()`)
-- Large ship SVG centered and rotated 5° (uses existing `animate-bob`), with detailed rigging, portholes, upper/lower cabins, and a red crack indicating iceberg damage
-- Massive threatening iceberg on the right (`animate-float` with delay 1.8s)
-- Smaller iceberg on the left (`animate-float` with delay 0.8s)
-- Two-layer animated wave section covering bottom ~28% (uses `animate-wave`)
-- Full-width "Crew Access" frosted panel docked to the absolute bottom of the page
-  - Desktop: label + name input + password input + "Board →" button in a single horizontal row
-  - Mobile: inputs stack vertically
+**Login page redesign (`src/app/login/page.tsx`):**
+- Full-screen Arctic gradient; old centered card removed
+- Title + tagline at top
+- Large ship SVG (340px wide, rotated 5°) with detailed rigging, portholes, red crack on hull
+- Massive threatening iceberg right side (`animate-float`, delay 1.8s)
+- Smaller iceberg left side (`animate-float`, delay 0.8s)
+- 30 pre-computed star positions (stable — no `Math.random()` hydration mismatch)
+- Two-layer animated wave covering bottom ~28%
+- Full-width "Crew Access" frosted panel docked to bottom: horizontal row on desktop, stacked on mobile
 - Failed login → `IcyErrorModal` (no inline error text)
 
-### Important notes for next tasks
-- The login page has no top nav bar — `ConditionalNav` (Task 3c) will hide the nav on `/login` via `usePathname()`
-- The `Crew Access` panel uses `backdrop-filter: blur(18px)` — test on Safari if blur looks wrong
-- Pre-computed STARS array avoids hydration mismatch that the old `Math.random()` approach caused
+### ✅ Task 3c — Nav Bar & Login Modal (2026-06-06)
 
-### Next task
-Task 3c — Nav Bar & Login Modal
-
----
-
-## Task 3c — Nav Bar & Login Modal (completed 2026-06-06)
-
-### What was done
-
-**ConditionalNav (3c.1)**
-- Created `src/components/ConditionalNav.tsx` — client component using `usePathname()`
-- Returns `null` on `/login`; otherwise renders `<NavBar />` followed by a `<div className="h-14" />` spacer to push page content below the fixed nav
-- Added `<ConditionalNav />` to `src/app/layout.tsx` (before `{children}`)
-
-**NavBar (3c.2)**
-- Created `src/components/NavBar.tsx` — fixed top bar, `z-30`, Arctic styling with `backdrop-filter: blur(14px)`
-- Left: `⚓ S.S. Barakah` logo linking to `/`
-- Center (desktop only): Ship / History / Admin links; active page gets white color + underline accent
+**NavBar (`src/components/NavBar.tsx`):**
+- Fixed top bar, `z-30`, `backdrop-filter: blur(14px)`, Arctic styling
+- Left: `⚓ S.S. Barakah` → links to `/`
+- Center (desktop): Ship / History / Admin — active page gets white + underline
 - Right (logged out): `Board Ship →` button opens `<LoginModal />`
-- Right (logged in): teammate initial circle + name + `▾` opens dropdown with "My Dashboard" and "Log Out"
-- Dropdown closes on outside click via `mousedown` listener on `document`
-- Re-reads `getCurrentTeammate()` from localStorage on every pathname change so it stays in sync after login/logout
+- Right (logged in): initial circle + name + `▾` → dropdown (My Dashboard, Log Out)
+- Dropdown closes on `mousedown` outside via `document` listener
+- Re-reads `getCurrentTeammate()` from localStorage on every pathname change
 
-**Mobile hamburger (3c.3)**
-- `☰` button visible on mobile (`sm:hidden`); center links are `hidden sm:flex`
-- Hamburger opens a frosted drawer sliding down from below the nav bar (absolute, `top-14`)
-- Drawer closes on outside tap or link click; active link gets left-border accent
+**Mobile hamburger:**
+- `☰` visible on mobile; center links hidden
+- Opens frosted drawer sliding down from `top-14`
+- Closes on outside tap or link click
 
-**LoginModal (3c.4)**
-- Created `src/components/LoginModal.tsx`
-- Frosted glass overlay dismissible by clicking the backdrop
-- Contains mini ship SVG, "S.S. Barakah" title, name input, password input, "Board →" button
-- On failure: shows `<IcyErrorModal />`
-- On success: calls `onSuccess()` callback (NavBar re-reads localStorage to update right side), then redirects to `/teammate/[id]`
+**LoginModal (`src/components/LoginModal.tsx`):**
+- Frosted glass overlay; dismissible by clicking backdrop
+- Mini ship SVG, title, name + password inputs, `Board →` button
+- Failure → `IcyErrorModal`
+- Success → calls `onSuccess()` callback (NavBar re-reads localStorage), redirects to `/teammate/[id]`
 
-**Teammate dashboard cleanup (3c.5)**
-- Removed the "Ship Dashboard" and "History" bottom nav buttons from `src/app/teammate/[teammateId]/page.tsx` — navigation is now handled by the NavBar
-- The inline "Log out" button in the page header is retained (it's a page action, not navigation)
+**ConditionalNav (`src/components/ConditionalNav.tsx`):**
+- Returns `null` on `/login`
+- Otherwise renders `<NavBar />` + `<div className="h-14" />` spacer
+- Added to `src/app/layout.tsx` before `{children}`
 
-### Important notes for next tasks
-- `ConditionalNav` is a client component; `layout.tsx` stays as a server component — this is intentional and correct for Next.js App Router
-- The `h-14` spacer in `ConditionalNav` means non-login pages automatically get proper top offset without any per-page `pt-14` needed
-- NavBar reads teammate state on every `pathname` change — if a page does something that changes auth without routing (unlikely), the nav won't auto-update until next navigation
-- The login page (`/login`) has no nav bar; it's self-contained with its own "Crew Access" panel
+**Teammate dashboard cleanup:**
+- Removed "Ship Dashboard" and "History" bottom nav buttons from `/teammate/[teammateId]/page.tsx`
+- Inline "Log out" button in page header kept (it's a page action, not navigation)
 
-### Next task
-Task 5 — Daily Task Creation & Completion Logic (Tasks 1–4 and 3b/3c are all complete)
+**Known issue (will fix in Task 7):**
+- After logout, user is sent to `/login` which has no nav bar, so `Board Ship →` modal is unreachable
+- Fix: once Task 7 (ship dashboard at `/`) is built as a public page, logout will redirect there instead of `/login`
 
----
+### ✅ Task 5 — Daily Task Creation & Completion Logic (2026-06-06)
 
-## Task 5 — Daily Task Creation & Completion Logic (completed 2026-06-06)
-
-### What was done
-
-All Task 5 behaviors were already implemented inside the teammate dashboard (Task 4). This task extracted the two pieces of pure logic into `calculations.ts` so they are testable and reusable, then wired the component back up.
+All behaviour was already implemented in Task 4. Task 5 extracted the testable pure logic:
 
 **New exports in `src/lib/calculations.ts`:**
-- `calculateDisplayPoints(tasks: DailyTask[]): number` — sums `points * completion_count` for completed tasks; repeatable tasks earn points per completion
-- `isTaskCompletable(task: DailyTask): boolean` — returns `false` for completed non-repeatable tasks and for repeatable tasks at or past `max_completions`; `true` otherwise
+- `calculateDisplayPoints(tasks)` — sums `points × completion_count` for completed tasks
+- `isTaskCompletable(task)` — `false` for completed non-repeatable; `false` for repeatable at/past max; `true` otherwise
 
-**Tests (TDD — all RED before implementation):**
-- 5 tests for `calculateDisplayPoints`: empty list, non-repeatable, repeatable×count, incomplete ignored, multi-task sum
-- 6 tests for `isTaskCompletable`: incomplete, completed non-repeatable, repeatable under max, at max, past max, completed-but-still-under-max
-- Total: 47 tests passing (was 36)
+**Tests:** 11 new tests (RED before implementation). Total: 47 passing.
 
-**Component changes (`src/app/teammate/[teammateId]/page.tsx`):**
-- Removed inline `calcPoints` helper; replaced with `calculateDisplayPoints` import
-- Removed inline `atMax`/`disabled` derivation in `TaskRow`; replaced with `isTaskCompletable`
-- Removed duplicate guard at top of `completeTask`; now a single `if (!isTaskCompletable(task)) return`
+**Component wiring:**
+- Removed inline `calcPoints` helper from teammate dashboard; uses `calculateDisplayPoints`
+- Removed inline `atMax`/`disabled` derivation in `TaskRow`; uses `isTaskCompletable`
+- Single guard in `completeTask`: `if (!isTaskCompletable(task)) return`
 
-### Behavior verified (already implemented in Task 4, confirmed correct)
-1. Recurring tasks seeded on page load with per-task duplicate check (`count` query on `(teammate_id, task_date, preset_task_id)`)
-2. Repeatable completion button disabled when `completion_count >= max_completions`; count/max label shown
-3. Optimistic UI update on completion; Supabase re-fetch on write error
-4. Points recalculate after every completion via `calculateDisplayPoints(tasks)` in derived state
+**Verified correct (already working from Task 4):**
+1. Recurring tasks seeded on page load with per-task duplicate check
+2. Repeatable button disabled at max; count/max shown
+3. Optimistic UI update on completion; Supabase re-fetch on error
+4. Points recalculate after every completion
 
-### Next task
-Task 6 — Preset Task System
+---
+
+## Git History (key commits)
+
+| Commit | Description |
+|---|---|
+| `d2aa2f3` | Reimagined the whole layout (UI overhaul design) |
+| `7158e95` | feat: Tasks 3b, 3c, 5 — login redesign, nav bar, auth persistence, task logic |
+
+---
+
+## Next Tasks
+
+### Task 6 — Preset Task System
+Extract `PresetModal` and `PresetRow` from the teammate dashboard (currently inline in `/teammate/[teammateId]/page.tsx`, which is 700+ lines) into `src/components/tasks/PresetTaskSelector.tsx`. No behaviour changes — purely making the component reusable and the dashboard file smaller. Wire the dashboard back to import from the new file.
+
+### Task 7 — Main Ship Dashboard (`/`)
+
+**Confirmed design (approved by user 2026-06-06):**
+- Public page — no auth required
+- Polls Supabase every 15 seconds
+- Layout (top → bottom):
+  1. Mission status chip + countdown to midnight
+  2. Team progress bar with % label
+  3. Ship scene — ship SVG tilts based on progress, 4 coloured circles as workers, ocean waves, static iceberg
+  4. Chad + Chud badge cards side by side
+  5. Team leaderboard (rank, name, points, tasks done/missed)
+  6. Recent completions feed (last 10, newest first)
+- Ship tilt: 0%→−15°, 25%→−10°, 50%→−5°, 75%→−2°, 100%→0° (CSS rotate)
+- Worker states: panic (fast jitter) below 75%, calm (slow drift) 75–99%, celebrate (bounce) at 100%
+- No sinking animation yet — that's Task 16. At day-end if sunk, show tilted ship + failure overlay.
+- After Task 7 is done: update logout redirect from `/login` to `/` so the nav bar is always accessible
+
+### Tasks 8–18 — See `docs/todo.md`
+
+---
+
+## Document Consistency Status (as of 2026-06-06)
+
+All five inconsistencies found in the review were fixed:
+1. ✅ Admin code removed from `SS_Barakah_Requirements.md §8.4` (was exposing "Dawoud Sink")
+2. ✅ `§22.1` function names updated to match actual `calculations.ts` exports
+3. ✅ `§28` duplicate item #4 fixed; numbering corrected through item 27
+4. ✅ `§29` added (was missing; jump from 28 to 30)
+5. ✅ Plans doc noted as targeting Next.js 14 but actual version is 16.2.7; stale auth.ts code inside is flagged
+
+---
+
+## Known Stale Documents (do not treat as current)
+
+- `docs/superpowers/plans/2026-06-05-project-setup-and-lib.md` — historical implementation plan for Tasks 1&2. The auth.ts code inside uses old `sessionStorage` and old admin code. Do not use as reference for current code — it is frozen history.
+
+---
+
+## Workflow Rules (set by user)
+
+1. **One task at a time.** Complete fully before starting the next.
+2. **Append to `handoff.md`** after each completed task.
+3. **Push to GitHub** after every task the user confirms is done.
+4. **TDD for all new logic.** Write failing test first, confirm RED, implement, confirm GREEN.
+5. **Brainstorm before building** any new feature or page — use the brainstorming skill, get design approval before writing code.
+6. **Read `AGENTS.md`** (which references `node_modules/next/dist/docs/`) before writing any Next.js code.
