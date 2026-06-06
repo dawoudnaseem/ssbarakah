@@ -16,10 +16,10 @@ interface TeamStatus {
 export default function StatusSection() {
   const [rows, setRows] = useState<TeamStatus[]>([])
   const [loading, setLoading] = useState(true)
-  const today = todayString()
 
   async function fetchStatus() {
     setLoading(true)
+    const today = todayString()
     const [{ data: tmData }, { data: taskData }, { data: compData }] = await Promise.all([
       supabase.from('teammates').select('*').eq('is_active', true).order('name'),
       supabase.from('daily_tasks').select('*').eq('task_date', today),
@@ -49,6 +49,13 @@ export default function StatusSection() {
   useEffect(() => { fetchStatus() }, [])
 
   if (loading) return <p style={{ color: '#9DD8F7' }}>Loading…</p>
+
+  if (rows.length === 0) return (
+    <div>
+      <h2 className="text-lg font-bold mb-2" style={{ color: '#F2FBFF' }}>Today&apos;s Status</h2>
+      <p style={{ color: 'rgba(157,216,247,0.4)' }}>No active teammates found.</p>
+    </div>
+  )
 
   return (
     <div>
