@@ -277,22 +277,74 @@ Pure refactor — no behaviour changes:
 
 ### ✅ Task 7 — Main Ship Dashboard (2026-06-06)
 
-Replaced the redirect-only `src/app/page.tsx` with the public ship dashboard:
+Replaced the redirect-only `src/app/page.tsx` with the full public ship dashboard. Went through several design iterations in the same session (all captured below).
 
-**Data:** Polls Supabase every 15 seconds (teammates, daily_tasks, task_completions, daily_results for today).
+---
 
-**Layout (top → bottom):**
-1. Mission status chip (CRITICAL/DAMAGED/STABILIZING/ALMOST REPAIRED/SURVIVED/SUNK) + live countdown to midnight
-2. Team progress bar with % label; "No repairs assigned yet" message when 0 required tasks
-3. `ShipScene` component (`src/components/ship/ShipScene.tsx`) — ship SVG tilts linearly from −15° (0%) to 0° (100%), 4 coloured worker circles animate (panic/calm/celebrate based on progress), 2-layer animated waves, floating iceberg
-4. Failure overlay if `daily_results.outcome = 'sunk'` (red panel with Chud callout)
-5. Chad + Chud badge cards side by side (reads `current_chad`/`current_chud` from teammates table)
-6. Crew leaderboard (rank, name, pts, required done/missed)
-7. Recent Repairs feed (last 10 completions, newest first; teammate name + task name + time + pts)
+#### Task 7 — Final architecture
 
-**Worker animations** added to `globals.css`: `animate-panic` (fast jitter), `animate-calm-worker` (slow drift), `animate-celebrate` (bounce)
+**Data:** Polls Supabase every 15 seconds — `teammates`, `daily_tasks`, `task_completions`, `daily_results` for today. Leaderboard and recent feed computed client-side from those four queries.
 
-**Logout redirect** updated from `/login` → `/` in both `teammate/[id]/page.tsx` and `NavBar.tsx` — nav bar is now always reachable after logout.
+**Three fixed overlays (always visible regardless of scroll):**
+- Mission status chip (top-left, `fixed top-[70px]`) — CRITICAL / DAMAGED / STABILIZING / ALMOST REPAIRED / SURVIVED / SUNK, colour-coded
+- Countdown to midnight (top-right, `fixed top-[70px]`)
+- Progress bar (bottom, `fixed bottom-0`) — frosted glass panel, fills navy→ice-blue→green as % rises
+
+**Scene section (`src/app/page.tsx`, normal flow, `height: 100svh`):**
+- Full-screen Arctic gradient background (`#061826` → `#0B3558`)
+- 30 pre-computed stars (no `Math.random()` — avoids hydration mismatch)
+- Three-layer z-ordering inside the scene:
+  - `z-1` — dark back wave (`#041220`, `height: 44%`, crest at y=32) — behind ship and icebergs
+  - `z-2` — ship + icebergs
+  - `z-3` — light front wave (`#0B3558`, `height: 40%`, crest at y=25) — **in front** of ship, partially submerging hull base and iceberg bottoms
+- Wave crests both resolve to ~30% waterline from bottom of scene; ship positioned `bottom: 21%` so hull base sits in the front wave
+
+**Ship (three-wrapper pattern — critical detail):**
+```
+Centering wrapper  — left:50%, translateX(-50%), never animated
+  └─ Tilt wrapper  — rotate(shipTilt deg), CSS transition 1.5s, transformOrigin center bottom
+       └─ Bob wrapper  — animate-bob-simple (translateY + gentle rotate, no conflict)
+            └─ <div style={{width: min(520px, 92vw), position:relative}}>
+                 <svg viewBox="0 0 340 170" width="100%" height="auto"> ...ship SVG...
+                 4× worker circles (absolute, % positions, scale with SVG)
+```
+The three-wrapper pattern is **mandatory**. If centering and animation live on the same element, `animate-bob` overrides `translateX(-50%)` and the ship drifts off-centre. Each transform on its own element; they compose correctly.
+
+**Ship tilt:** `shipTilt = -(15 - progress/100 * 15)` — linear −15° (0%) to 0° (100%). If sunk: −30° + `translateY(140px)`.
+
+**Worker animations** (in `globals.css`):
+- `animate-panic` — fast jitter (< 75% progress)
+- `animate-calm-worker` — slow drift (75–99%)
+- `animate-celebrate` — bounce (100%)
+- `animate-bob-simple` — `translateY(-11px) rotate(±1.5deg)`, 3.5s loop — ship bobs on the water
+
+**Icebergs:**
+- Small (left, `bottom: 28%`, `animate-float` delay 0.8s)
+- Large threatening (right, `bottom: 25%`, `animate-float` delay 1.8s)
+
+**Scroll → deep abyss effect:**
+- Scene is normal flow (not sticky) — everything (sky, ship, waves) scrolls upward together
+- 100px gradient transition (`#0B3558` → `#020810`) acts as the "going underwater" moment
+- Data section (`background: #020810`, near-black) contains: failure callout (if sunk), Chad/Chud badge cards, crew leaderboard, recent repairs feed
+- "— deep waters —" divider marks the transition
+
+**Logout redirect** updated from `/login` → `/` in both `src/app/teammate/[teammateId]/page.tsx` and `src/components/NavBar.tsx`.
+
+---
+
+#### Key decisions made during Task 7 iterations
+
+| Decision | Value | Reason |
+|---|---|---|
+| Scene scroll behaviour | Normal flow (not sticky) | User wanted ship/sky/waves to all scroll up together as you "dive" |
+| Data section placement | Below scene, dark background | "Scroll into the deep ocean abyss" — user's design concept |
+| Only progress bar as overlay | Fixed bottom, no other overlays in scene | User's explicit instruction |
+| Mission chip + countdown | Fixed top-left / top-right | User requested these back after they were removed |
+| Ship size | `min(520px, 92vw)` | User requested larger than original 340px |
+| Ship bottom position | `21%` | User iterated: 36% → 29% → 26% → 18% → 21% (final, user-set) |
+| Three-wrapper pattern | Mandatory | Prevents `animate-bob` from overwriting `translateX(-50%)` centering |
+| Wave z-layering | Dark wave z:1 (behind), light wave z:3 (in front) | User's explicit request — icebergs/ship partially submerged by front wave |
+| `ShipScene.tsx` | Deleted — inlined into `page.tsx` | Simpler; ship is only used on this one page |
 
 ---
 
