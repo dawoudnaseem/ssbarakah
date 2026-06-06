@@ -150,6 +150,8 @@ export default function ShipDashboard() {
     return () => clearInterval(id)
   }, [fetchData])
 
+  const requiredTasks = allTasks.filter(t => t.is_required)
+  const hasNoRequiredTasks = requiredTasks.length === 0
   const progress = calculateTeamProgress(allTasks)
   const isSunk = todayResult?.outcome === 'sunk'
   const status = getMissionStatus(progress, isSunk)
@@ -204,7 +206,10 @@ export default function ShipDashboard() {
           <div className="max-w-2xl mx-auto px-5 py-4">
             <div className="flex items-center justify-between mb-2">
               <p className="text-xs font-semibold uppercase tracking-widest" style={{ color: '#9DD8F7' }}>Ship Repairs</p>
-              <p className="text-sm font-bold" style={{ color: '#9DD8F7' }}>{progress}%</p>
+              {hasNoRequiredTasks
+                ? <p className="text-xs italic" style={{ color: 'rgba(157,216,247,0.6)' }}>No repairs assigned yet</p>
+                : <p className="text-sm font-bold" style={{ color: '#9DD8F7' }}>{progress}%</p>
+              }
             </div>
             <div className="w-full h-2.5 rounded-full overflow-hidden" style={{ background: 'rgba(157,216,247,0.12)' }}>
               <div
@@ -212,6 +217,11 @@ export default function ShipDashboard() {
                 style={{ width: `${progress}%`, background: progress === 100 ? '#22C55E' : progress <= 25 ? '#DC2626' : '#9DD8F7' }}
               />
             </div>
+            {hasNoRequiredTasks && (
+              <p className="text-xs mt-1.5 text-center" style={{ color: 'rgba(157,216,247,0.5)' }}>
+                Choose your tasks to begin today&apos;s mission.
+              </p>
+            )}
           </div>
         </div>
       </div>

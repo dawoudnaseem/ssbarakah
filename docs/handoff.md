@@ -348,6 +348,20 @@ The three-wrapper pattern is **mandatory**. If centering and animation live on t
 
 ---
 
+### ✅ Task 8 — Progress Calculation (2026-06-06)
+
+Most logic was already in place from Task 7. This task confirmed and completed the remaining gap:
+
+- `calculateTeamProgress(dailyTasks)` in `src/lib/calculations.ts` — already implemented and tested (returns 0 for empty, rounds to integer %)
+- `getProgressState(percentage, isSunk)` in `src/lib/calculations.ts` — already implemented and tested (critical/damaged/stabilizing/almost_repaired/survived/sunk)
+- `getMissionStatus(progress, isSunk)` in `src/app/page.tsx` — already wired to the mission chip overlay with color coding
+- Progress bar already polls live data every 15 seconds via `fetchData` / `setInterval`
+- **New:** Added `hasNoRequiredTasks` check in `src/app/page.tsx`; when no required tasks exist the progress bar label shows "No repairs assigned yet" and a sub-line "Choose your tasks to begin today's mission." instead of the percentage
+
+All 47 tests still passing.
+
+---
+
 ## Next Tasks
 
 ### Task 6 — Preset Task System
