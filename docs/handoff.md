@@ -497,6 +497,36 @@ All 47 tests still passing.
 
 ---
 
+### ✅ Task 9 — Leaderboard (2026-06-06)
+
+**Design session:** Visual mockups shown in browser companion. Approved design:
+- Row layout: rank · avatar circle (initial) · name + inline Chad/Chud badge · points + status stacked on right
+- Rank #1 row glows amber (`rgba(245,158,11,0.08)` bg, amber border); all others dark navy
+- Avatar: amber solid for #1, navy + ice border for others; shows first letter of name uppercased
+- Chad badge: `⚓ CHAD` amber pill inline after name (only when `current_chad` is true)
+- Chud badge: `💀 CHUD` red pill inline after name (only when `current_chud` is true — never both)
+- Points: amber for #1, ice-blue for others
+- Status line (only when `totalRequired > 0`): `✓ all X/X tasks done` in green when all required done; `N missed` in red otherwise
+- No pills for required/total stats — status line only
+- Requirements written into `docs/SS_Barakah_Requirements.md §17`
+
+**Implementation (subagent-driven, 4 tasks):**
+
+New files created:
+- `src/types/leaderboard.ts` — exports `LeaderboardEntry` (teammate, points, completedRequired, totalRequired, missedRequired) and `RecentCompletion` (id, completed_at, points_awarded, task_name, teammate_name); previously these were inline in `page.tsx`
+- `src/components/leaderboard/Leaderboard.tsx` — pure presentational component; receives `entries: LeaderboardEntry[]` prop; renders all approved row styles
+- `src/components/leaderboard/RecentRepairsFeed.tsx` — pure presentational component; receives `items: RecentCompletion[]`; `formatTime` helper moved here from `page.tsx`
+
+Modified:
+- `src/app/page.tsx` — removed 45 lines of inline markup; now uses `<Leaderboard entries={leaderboard} />` and `<RecentRepairsFeed items={recentFeed} />`; data fetching and 15-second polling unchanged
+
+**Bug caught in final review and fixed:**
+- `entry.teammate.name[0].toUpperCase()` would throw a `TypeError` at runtime if a teammate's name was an empty string. Fixed to `(entry.teammate.name[0] ?? '?').toUpperCase()`.
+
+All 47 tests still passing.
+
+---
+
 ## Next Tasks
 
 ### Task 6 — Preset Task System
