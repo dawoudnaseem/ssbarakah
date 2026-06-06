@@ -55,7 +55,7 @@ function LeaderboardRow({ entry, rank }: { entry: LeaderboardEntry; rank: number
           border: isFirst ? 'none' : '1px solid rgba(157,216,247,0.2)',
         }}
       >
-        {entry.teammate.name[0].toUpperCase()}
+        {(entry.teammate.name[0] ?? '?').toUpperCase()}
       </div>
 
       {/* Name + badge */}
