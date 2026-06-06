@@ -7,6 +7,8 @@ import {
   calculateHeatmapValues,
   calculateCurrentStreak,
   calculateLongestStreak,
+  calculateDisplayPoints,
+  isTaskCompletable,
 } from '@/lib/calculations'
 import type { DailyTask, TaskCompletion, TeammateDailyStat } from '@/types/database'
 
@@ -182,6 +184,59 @@ describe('calculateCurrentStreak', () => {
       baseStat({ stat_date: '2026-06-03', completed_all_required: true }),
     ]
     expect(calculateCurrentStreak(stats)).toBe(1)
+  })
+})
+
+describe('calculateDisplayPoints', () => {
+  it('returns 0 for empty task list', () => {
+    expect(calculateDisplayPoints([])).toBe(0)
+  })
+  it('counts points for completed non-repeatable tasks', () => {
+    const tasks = [
+      baseTask({ points: 20, is_completed: true, completion_count: 1 }),
+    ]
+    expect(calculateDisplayPoints(tasks)).toBe(20)
+  })
+  it('multiplies points by completion_count for repeatable tasks', () => {
+    const tasks = [
+      baseTask({ points: 10, is_completed: true, is_repeatable: true, completion_count: 3 }),
+    ]
+    expect(calculateDisplayPoints(tasks)).toBe(30)
+  })
+  it('ignores incomplete tasks', () => {
+    const tasks = [
+      baseTask({ id: '1', points: 50, is_completed: false, completion_count: 0 }),
+      baseTask({ id: '2', points: 20, is_completed: true,  completion_count: 1 }),
+    ]
+    expect(calculateDisplayPoints(tasks)).toBe(20)
+  })
+  it('sums across multiple completed tasks', () => {
+    const tasks = [
+      baseTask({ id: '1', points: 10, is_completed: true, completion_count: 1 }),
+      baseTask({ id: '2', points: 15, is_completed: true, is_repeatable: true, completion_count: 2 }),
+    ]
+    expect(calculateDisplayPoints(tasks)).toBe(40)
+  })
+})
+
+describe('isTaskCompletable', () => {
+  it('returns true for an incomplete non-repeatable task', () => {
+    expect(isTaskCompletable(baseTask({ is_completed: false }))).toBe(true)
+  })
+  it('returns false for a completed non-repeatable task', () => {
+    expect(isTaskCompletable(baseTask({ is_completed: true, is_repeatable: false }))).toBe(false)
+  })
+  it('returns true for a repeatable task not yet at max', () => {
+    expect(isTaskCompletable(baseTask({ is_repeatable: true, completion_count: 2, max_completions: 5 }))).toBe(true)
+  })
+  it('returns false for a repeatable task at max completions', () => {
+    expect(isTaskCompletable(baseTask({ is_repeatable: true, completion_count: 5, max_completions: 5 }))).toBe(false)
+  })
+  it('returns false for a repeatable task past max completions', () => {
+    expect(isTaskCompletable(baseTask({ is_repeatable: true, completion_count: 6, max_completions: 5 }))).toBe(false)
+  })
+  it('returns true for a completed repeatable task still under max', () => {
+    expect(isTaskCompletable(baseTask({ is_completed: true, is_repeatable: true, completion_count: 1, max_completions: 3 }))).toBe(true)
   })
 })
 

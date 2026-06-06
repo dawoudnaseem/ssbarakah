@@ -54,6 +54,15 @@ export function calculateCurrentStreak(stats: TeammateDailyStat[]): number {
   return streak
 }
 
+export function calculateDisplayPoints(tasks: DailyTask[]): number {
+  return tasks.reduce((sum, t) => sum + (t.is_completed ? t.points * t.completion_count : 0), 0)
+}
+
+export function isTaskCompletable(task: DailyTask): boolean {
+  if (task.is_repeatable) return task.completion_count < task.max_completions
+  return !task.is_completed
+}
+
 export function calculateLongestStreak(stats: TeammateDailyStat[]): number {
   const sorted = [...stats].sort((a, b) => a.stat_date.localeCompare(b.stat_date))
   let longest = 0

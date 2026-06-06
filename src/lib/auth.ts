@@ -3,7 +3,7 @@ import type { Teammate } from '@/types/database'
 
 const TEAMMATE_KEY = 'ss_barakah_teammate'
 const ADMIN_KEY = 'ss_barakah_admin'
-const ADMIN_CODE = 'Dawoud Sink'
+const ADMIN_CODE = '8608 guzw'
 
 export async function loginTeammate(name: string, password: string): Promise<Teammate | null> {
   const { data, error } = await supabase
@@ -19,17 +19,17 @@ export async function loginTeammate(name: string, password: string): Promise<Tea
   const match = data.plain_password === password || data.password_hash === password
   if (!match) return null
 
-  sessionStorage.setItem(TEAMMATE_KEY, JSON.stringify(data))
+  localStorage.setItem(TEAMMATE_KEY, JSON.stringify(data))
   return data as Teammate
 }
 
 export function logoutTeammate(): void {
-  sessionStorage.removeItem(TEAMMATE_KEY)
+  localStorage.removeItem(TEAMMATE_KEY)
 }
 
 export function getCurrentTeammate(): Teammate | null {
   if (typeof window === 'undefined') return null
-  const raw = sessionStorage.getItem(TEAMMATE_KEY)
+  const raw = localStorage.getItem(TEAMMATE_KEY)
   if (!raw) return null
   try {
     return JSON.parse(raw) as Teammate

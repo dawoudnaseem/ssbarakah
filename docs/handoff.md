@@ -148,3 +148,119 @@ A full UI overhaul was designed and approved via brainstorming session. No code 
 Task 3b — Login Page Redesign (auth persistence + full-screen Arctic layout + IcyErrorModal)
 Then Task 3c — Nav Bar & Login Modal
 Then continue from Task 5 onward as originally planned.
+
+---
+
+## Task 3b — Login Page Redesign & Auth Persistence (completed 2026-06-06)
+
+### What was done
+
+**Auth persistence (3b.1)**
+- `src/lib/auth.ts`: switched `loginTeammate` from `sessionStorage.setItem` to `localStorage.setItem`
+- `logoutTeammate()` now calls `localStorage.removeItem`
+- `getCurrentTeammate()` now reads from `localStorage`
+- Admin session remains in `sessionStorage` (unchanged)
+- Admin code updated from `"Dawoud Sink"` to `"8608 guzw"`
+
+**IcyErrorModal (3b.3)**
+- Created `src/components/IcyErrorModal.tsx`
+- Frosted glass overlay with red-tinted border (`rgba(220,38,38,0.5)`)
+- Dismisses on button click or outside-overlay click
+- Shows a ❄️ icon, error message text, and a "Dismiss" button
+
+**Login page redesign (3b.2)**
+- Full-screen Arctic gradient background — old centered card layout removed
+- "S.S. Barakah" title + tagline docked near the top
+- 30 pre-computed star positions (stable across server renders — no `Math.random()`)
+- Large ship SVG centered and rotated 5° (uses existing `animate-bob`), with detailed rigging, portholes, upper/lower cabins, and a red crack indicating iceberg damage
+- Massive threatening iceberg on the right (`animate-float` with delay 1.8s)
+- Smaller iceberg on the left (`animate-float` with delay 0.8s)
+- Two-layer animated wave section covering bottom ~28% (uses `animate-wave`)
+- Full-width "Crew Access" frosted panel docked to the absolute bottom of the page
+  - Desktop: label + name input + password input + "Board →" button in a single horizontal row
+  - Mobile: inputs stack vertically
+- Failed login → `IcyErrorModal` (no inline error text)
+
+### Important notes for next tasks
+- The login page has no top nav bar — `ConditionalNav` (Task 3c) will hide the nav on `/login` via `usePathname()`
+- The `Crew Access` panel uses `backdrop-filter: blur(18px)` — test on Safari if blur looks wrong
+- Pre-computed STARS array avoids hydration mismatch that the old `Math.random()` approach caused
+
+### Next task
+Task 3c — Nav Bar & Login Modal
+
+---
+
+## Task 3c — Nav Bar & Login Modal (completed 2026-06-06)
+
+### What was done
+
+**ConditionalNav (3c.1)**
+- Created `src/components/ConditionalNav.tsx` — client component using `usePathname()`
+- Returns `null` on `/login`; otherwise renders `<NavBar />` followed by a `<div className="h-14" />` spacer to push page content below the fixed nav
+- Added `<ConditionalNav />` to `src/app/layout.tsx` (before `{children}`)
+
+**NavBar (3c.2)**
+- Created `src/components/NavBar.tsx` — fixed top bar, `z-30`, Arctic styling with `backdrop-filter: blur(14px)`
+- Left: `⚓ S.S. Barakah` logo linking to `/`
+- Center (desktop only): Ship / History / Admin links; active page gets white color + underline accent
+- Right (logged out): `Board Ship →` button opens `<LoginModal />`
+- Right (logged in): teammate initial circle + name + `▾` opens dropdown with "My Dashboard" and "Log Out"
+- Dropdown closes on outside click via `mousedown` listener on `document`
+- Re-reads `getCurrentTeammate()` from localStorage on every pathname change so it stays in sync after login/logout
+
+**Mobile hamburger (3c.3)**
+- `☰` button visible on mobile (`sm:hidden`); center links are `hidden sm:flex`
+- Hamburger opens a frosted drawer sliding down from below the nav bar (absolute, `top-14`)
+- Drawer closes on outside tap or link click; active link gets left-border accent
+
+**LoginModal (3c.4)**
+- Created `src/components/LoginModal.tsx`
+- Frosted glass overlay dismissible by clicking the backdrop
+- Contains mini ship SVG, "S.S. Barakah" title, name input, password input, "Board →" button
+- On failure: shows `<IcyErrorModal />`
+- On success: calls `onSuccess()` callback (NavBar re-reads localStorage to update right side), then redirects to `/teammate/[id]`
+
+**Teammate dashboard cleanup (3c.5)**
+- Removed the "Ship Dashboard" and "History" bottom nav buttons from `src/app/teammate/[teammateId]/page.tsx` — navigation is now handled by the NavBar
+- The inline "Log out" button in the page header is retained (it's a page action, not navigation)
+
+### Important notes for next tasks
+- `ConditionalNav` is a client component; `layout.tsx` stays as a server component — this is intentional and correct for Next.js App Router
+- The `h-14` spacer in `ConditionalNav` means non-login pages automatically get proper top offset without any per-page `pt-14` needed
+- NavBar reads teammate state on every `pathname` change — if a page does something that changes auth without routing (unlikely), the nav won't auto-update until next navigation
+- The login page (`/login`) has no nav bar; it's self-contained with its own "Crew Access" panel
+
+### Next task
+Task 5 — Daily Task Creation & Completion Logic (Tasks 1–4 and 3b/3c are all complete)
+
+---
+
+## Task 5 — Daily Task Creation & Completion Logic (completed 2026-06-06)
+
+### What was done
+
+All Task 5 behaviors were already implemented inside the teammate dashboard (Task 4). This task extracted the two pieces of pure logic into `calculations.ts` so they are testable and reusable, then wired the component back up.
+
+**New exports in `src/lib/calculations.ts`:**
+- `calculateDisplayPoints(tasks: DailyTask[]): number` — sums `points * completion_count` for completed tasks; repeatable tasks earn points per completion
+- `isTaskCompletable(task: DailyTask): boolean` — returns `false` for completed non-repeatable tasks and for repeatable tasks at or past `max_completions`; `true` otherwise
+
+**Tests (TDD — all RED before implementation):**
+- 5 tests for `calculateDisplayPoints`: empty list, non-repeatable, repeatable×count, incomplete ignored, multi-task sum
+- 6 tests for `isTaskCompletable`: incomplete, completed non-repeatable, repeatable under max, at max, past max, completed-but-still-under-max
+- Total: 47 tests passing (was 36)
+
+**Component changes (`src/app/teammate/[teammateId]/page.tsx`):**
+- Removed inline `calcPoints` helper; replaced with `calculateDisplayPoints` import
+- Removed inline `atMax`/`disabled` derivation in `TaskRow`; replaced with `isTaskCompletable`
+- Removed duplicate guard at top of `completeTask`; now a single `if (!isTaskCompletable(task)) return`
+
+### Behavior verified (already implemented in Task 4, confirmed correct)
+1. Recurring tasks seeded on page load with per-task duplicate check (`count` query on `(teammate_id, task_date, preset_task_id)`)
+2. Repeatable completion button disabled when `completion_count >= max_completions`; count/max label shown
+3. Optimistic UI update on completion; Supabase re-fetch on write error
+4. Points recalculate after every completion via `calculateDisplayPoints(tasks)` in derived state
+
+### Next task
+Task 6 — Preset Task System

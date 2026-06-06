@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation'
 import { getCurrentTeammate, logoutTeammate } from '@/lib/auth'
 import { supabase } from '@/lib/supabaseClient'
 import { todayString } from '@/lib/dateUtils'
+import { calculateDisplayPoints, isTaskCompletable } from '@/lib/calculations'
 import type { Teammate, DailyTask, PresetTask, RecurringTask } from '@/types/database'
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -29,12 +30,6 @@ const DEFAULT_FORM: AddTaskForm = {
   is_repeatable: false,
   max_completions: 1,
   is_recurring: false,
-}
-
-// ─── Helper ───────────────────────────────────────────────────────────────────
-
-function calcPoints(tasks: DailyTask[]): number {
-  return tasks.reduce((sum, t) => sum + (t.is_completed ? t.points * t.completion_count : 0), 0)
 }
 
 // ─── Page ─────────────────────────────────────────────────────────────────────
@@ -157,8 +152,7 @@ export default function TeammatePage({ params }: { params: Promise<{ teammateId:
 
   // ── Task completion ─────────────────────────────────────────────────────────
   async function completeTask(task: DailyTask) {
-    if (task.is_completed && !task.is_repeatable) return
-    if (task.is_repeatable && task.completion_count >= task.max_completions) return
+    if (!isTaskCompletable(task)) return
 
     const newCount = task.completion_count + 1
     const nowCompleted = true
@@ -296,7 +290,7 @@ export default function TeammatePage({ params }: { params: Promise<{ teammateId:
   const optional = tasks.filter(t => !t.is_required)
   const completedRequired = required.filter(t => t.is_completed).length
   const totalRequired = required.length
-  const points = calcPoints(tasks)
+  const points = calculateDisplayPoints(tasks)
   const isChadBadge = teammate?.current_chad
   const isChadChud = teammate?.current_chud
 
@@ -541,23 +535,6 @@ export default function TeammatePage({ params }: { params: Promise<{ teammateId:
           />
         )}
 
-        {/* ── Nav links ── */}
-        <div className="flex gap-3 pt-2">
-          <button
-            onClick={() => router.push('/')}
-            className="flex-1 py-2 rounded-lg text-xs"
-            style={{ background: 'rgba(157,216,247,0.08)', border: '1px solid rgba(157,216,247,0.15)', color: 'rgba(242,251,255,0.6)' }}
-          >
-            Ship Dashboard
-          </button>
-          <button
-            onClick={() => router.push('/history')}
-            className="flex-1 py-2 rounded-lg text-xs"
-            style={{ background: 'rgba(157,216,247,0.08)', border: '1px solid rgba(157,216,247,0.15)', color: 'rgba(242,251,255,0.6)' }}
-          >
-            History
-          </button>
-        </div>
       </div>
     </main>
   )
@@ -567,8 +544,7 @@ export default function TeammatePage({ params }: { params: Promise<{ teammateId:
 
 function TaskRow({ task, onComplete }: { task: DailyTask; onComplete: (t: DailyTask) => void }) {
   const done = task.is_completed
-  const atMax = task.is_repeatable && task.completion_count >= task.max_completions
-  const disabled = (done && !task.is_repeatable) || atMax
+  const disabled = !isTaskCompletable(task)
 
   return (
     <li
