@@ -8,6 +8,7 @@ import type { Teammate, DailyTask, DailyResult } from '@/types/database'
 import type { LeaderboardEntry, RecentCompletion } from '@/types/leaderboard'
 import Leaderboard from '@/components/leaderboard/Leaderboard'
 import RecentRepairsFeed from '@/components/leaderboard/RecentRepairsFeed'
+import BadgeDisplay from '@/components/leaderboard/BadgeDisplay'
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -374,12 +375,12 @@ export default function ShipDashboard() {
             </div>
           )}
 
-          <div className="grid grid-cols-2 gap-3">
-            <BadgeCard emoji="⚓" label="Chad of the Day" name={chadEntry?.teammate.name ?? '—'}
-              color="#F59E0B" subtitle={chadEntry ? `${chadEntry.points} pts` : 'Not yet assigned'} />
-            <BadgeCard emoji="💀" label="Chud of the Day" name={chudEntry?.teammate.name ?? 'None'}
-              color="#DC2626" subtitle={chudEntry ? `${chudEntry.missedRequired} missed` : 'Everyone held it down'} />
-          </div>
+          <BadgeDisplay
+            chadName={chadEntry?.teammate.name}
+            chadPoints={chadEntry?.points}
+            chudName={chudEntry?.teammate.name}
+            chudMissed={chudEntry?.missedRequired}
+          />
 
           <Leaderboard entries={leaderboard} />
 
@@ -391,21 +392,6 @@ export default function ShipDashboard() {
         </div>
       </div>
 
-    </div>
-  )
-}
-
-// ─── Sub-components ───────────────────────────────────────────────────────────
-
-function BadgeCard({ emoji, label, name, color, subtitle }: {
-  emoji: string; label: string; name: string; color: string; subtitle: string
-}) {
-  return (
-    <div className="rounded-xl p-4 flex flex-col gap-1"
-      style={{ background: `${color}08`, border: `1px solid ${color}35` }}>
-      <p className="text-xs font-semibold uppercase tracking-widest" style={{ color }}>{emoji} {label}</p>
-      <p className="text-base font-bold" style={{ color: '#F2FBFF' }}>{name}</p>
-      <p className="text-xs" style={{ color: 'rgba(242,251,255,0.4)' }}>{subtitle}</p>
     </div>
   )
 }
