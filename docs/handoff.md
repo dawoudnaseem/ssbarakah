@@ -39,3 +39,33 @@
 ### Next task
 
 Task 3 — Login Page (`/login`). Build the UI with Arctic theme (dark navy background, ship silhouette, iceberg). Wire up `loginTeammate()` from `src/lib/auth.ts`. Redirect to `/teammate/[id]` on success, show error on failure.
+
+---
+
+## Task 3 — Login Page (completed 2026-06-05)
+
+### What was done
+- Updated `src/app/globals.css` with Arctic color palette CSS variables, and keyframe animations: `wave` (looping ocean wave), `float` (iceberg bob), `bob` (ship gentle rocking)
+- Updated `src/app/layout.tsx` with correct app title ("S.S. Barakah") and tagline metadata; removed unused Geist Mono font
+- Created `src/app/login/page.tsx` — full login page with:
+  - Arctic gradient background (`#061826` → `#0B3558`)
+  - Procedurally placed star dots in upper portion
+  - Two SVG icebergs floating on the left and right (using `animate-float` with offset delay)
+  - SVG ship silhouette with mast, flag, cabin windows, and a red crack showing iceberg damage (using `animate-bob`)
+  - Frosted glass login card (backdrop-blur, semi-transparent `#0B3558`)
+  - Name and password inputs styled to match the theme
+  - "Board the Ship →" submit button; shows "Boarding..." while loading
+  - Error message box on failed login
+  - Calls `loginTeammate()` from `src/lib/auth.ts`; on success redirects to `/teammate/[id]`
+  - Animated SVG wave bar at the bottom of the page
+- Created `src/app/teammate/[teammateId]/page.tsx` — minimal placeholder so redirect after login doesn't 404
+- Updated `src/app/page.tsx` — root `/` now redirects to `/login`
+
+### Important notes for next tasks
+- The stars on the login page use `Math.random()` — they re-randomize on each server render but are stable client-side. This is fine for MVP.
+- The teammate placeholder page at `/teammate/[teammateId]` just shows the ID. Task 4 will replace it with the full dashboard.
+- The `loginTeammate` function stores the full teammate row in `sessionStorage` under key `ss_barakah_teammate`.
+- Login flow: name + password → Supabase query → `plain_password` comparison → store in sessionStorage → redirect to `/teammate/[id]`.
+
+### Next task
+Task 4 — Teammate Dashboard Page (`/teammate/[teammateId]`). Replace the placeholder with the full dashboard: teammate name, badge, today's tasks, points, add task, preset selector, recurring toggle, streak, heatmap placeholder, and Pomodoro placeholder.
