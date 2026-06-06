@@ -6,6 +6,8 @@ import { todayString } from '@/lib/dateUtils'
 import { calculateTeamProgress } from '@/lib/calculations'
 import type { Teammate, DailyTask, DailyResult } from '@/types/database'
 import type { LeaderboardEntry, RecentCompletion } from '@/types/leaderboard'
+import Leaderboard from '@/components/leaderboard/Leaderboard'
+import RecentRepairsFeed from '@/components/leaderboard/RecentRepairsFeed'
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -379,51 +381,9 @@ export default function ShipDashboard() {
               color="#DC2626" subtitle={chudEntry ? `${chudEntry.missedRequired} missed` : 'Everyone held it down'} />
           </div>
 
-          <section>
-            <p className="text-xs font-semibold uppercase tracking-widest mb-3" style={{ color: 'rgba(157,216,247,0.55)' }}>Crew Leaderboard</p>
-            <div className="flex flex-col gap-2">
-              {leaderboard.map((entry, i) => (
-                <div key={entry.teammate.id} className="flex items-center gap-3 rounded-xl px-4 py-3"
-                  style={{ background: 'rgba(9,26,44,0.8)', border: '1px solid rgba(157,216,247,0.07)' }}>
-                  <span className="text-sm font-bold w-5 text-center"
-                    style={{ color: i === 0 ? '#F59E0B' : 'rgba(242,251,255,0.3)' }}>{i + 1}</span>
-                  <div className="flex-1 min-w-0">
-                    <p className="text-sm font-medium" style={{ color: '#F2FBFF' }}>{entry.teammate.name}</p>
-                    <p className="text-xs" style={{ color: 'rgba(242,251,255,0.35)' }}>
-                      {entry.completedRequired}/{entry.totalRequired} required
-                      {entry.missedRequired > 0 && ` · ${entry.missedRequired} missed`}
-                    </p>
-                  </div>
-                  <span className="text-sm font-bold" style={{ color: '#9DD8F7' }}>{entry.points} pts</span>
-                </div>
-              ))}
-              {leaderboard.length === 0 && (
-                <p className="text-sm" style={{ color: 'rgba(242,251,255,0.3)' }}>No crew data yet.</p>
-              )}
-            </div>
-          </section>
+          <Leaderboard entries={leaderboard} />
 
-          <section>
-            <p className="text-xs font-semibold uppercase tracking-widest mb-3" style={{ color: 'rgba(157,216,247,0.55)' }}>Recent Repairs</p>
-            {recentFeed.length === 0 ? (
-              <p className="text-sm" style={{ color: 'rgba(242,251,255,0.3)' }}>No completions yet today.</p>
-            ) : (
-              <div className="flex flex-col gap-2">
-                {recentFeed.map(c => (
-                  <div key={c.id} className="flex items-center justify-between gap-3 rounded-xl px-4 py-2.5"
-                    style={{ background: 'rgba(9,26,44,0.6)', border: '1px solid rgba(157,216,247,0.06)' }}>
-                    <div className="min-w-0">
-                      <p className="text-sm truncate" style={{ color: '#F2FBFF' }}>
-                        <span style={{ color: '#9DD8F7' }}>{c.teammate_name}</span> — {c.task_name}
-                      </p>
-                      <p className="text-xs" style={{ color: 'rgba(242,251,255,0.3)' }}>{formatTime(c.completed_at)}</p>
-                    </div>
-                    <span className="text-xs font-bold shrink-0" style={{ color: '#22C55E' }}>+{c.points_awarded}</span>
-                  </div>
-                ))}
-              </div>
-            )}
-          </section>
+          <RecentRepairsFeed items={recentFeed} />
 
           {/* Clears the fixed progress bar */}
           <div style={{ height: '80px' }} />
@@ -448,11 +408,6 @@ function BadgeCard({ emoji, label, name, color, subtitle }: {
       <p className="text-xs" style={{ color: 'rgba(242,251,255,0.4)' }}>{subtitle}</p>
     </div>
   )
-}
-
-function formatTime(iso: string): string {
-  try { return new Date(iso).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) }
-  catch { return '' }
 }
 
 // ─── Pre-computed stars ───────────────────────────────────────────────────────
