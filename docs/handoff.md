@@ -267,6 +267,35 @@ All behaviour was already implemented in Task 4. Task 5 extracted the testable p
 
 ---
 
+### ✅ Task 6 — Preset Task System (2026-06-06)
+
+Pure refactor — no behaviour changes:
+- Created `src/components/tasks/PresetTaskSelector.tsx` exporting `PresetTaskSelector` (renamed from inline `PresetModal`), `PresetRow`, `Field`, `Toggle`, and `inputStyle`
+- Removed all five duplicated definitions from `/teammate/[teammateId]/page.tsx`
+- Dashboard now imports from the new file; file is ~100 lines shorter
+- TypeScript clean, all 47 tests still pass
+
+### ✅ Task 7 — Main Ship Dashboard (2026-06-06)
+
+Replaced the redirect-only `src/app/page.tsx` with the public ship dashboard:
+
+**Data:** Polls Supabase every 15 seconds (teammates, daily_tasks, task_completions, daily_results for today).
+
+**Layout (top → bottom):**
+1. Mission status chip (CRITICAL/DAMAGED/STABILIZING/ALMOST REPAIRED/SURVIVED/SUNK) + live countdown to midnight
+2. Team progress bar with % label; "No repairs assigned yet" message when 0 required tasks
+3. `ShipScene` component (`src/components/ship/ShipScene.tsx`) — ship SVG tilts linearly from −15° (0%) to 0° (100%), 4 coloured worker circles animate (panic/calm/celebrate based on progress), 2-layer animated waves, floating iceberg
+4. Failure overlay if `daily_results.outcome = 'sunk'` (red panel with Chud callout)
+5. Chad + Chud badge cards side by side (reads `current_chad`/`current_chud` from teammates table)
+6. Crew leaderboard (rank, name, pts, required done/missed)
+7. Recent Repairs feed (last 10 completions, newest first; teammate name + task name + time + pts)
+
+**Worker animations** added to `globals.css`: `animate-panic` (fast jitter), `animate-calm-worker` (slow drift), `animate-celebrate` (bounce)
+
+**Logout redirect** updated from `/login` → `/` in both `teammate/[id]/page.tsx` and `NavBar.tsx` — nav bar is now always reachable after logout.
+
+---
+
 ## Next Tasks
 
 ### Task 6 — Preset Task System

@@ -35,7 +35,7 @@ export default function NavBar() {
     logoutTeammate()
     setTeammate(null)
     setShowDropdown(false)
-    router.push('/login')
+    router.push('/')
   }
 
   function handleLoginSuccess() {

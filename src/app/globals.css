@@ -43,3 +43,32 @@ html, body {
 .animate-bob {
   animation: bob 3s ease-in-out infinite;
 }
+
+@keyframes panic {
+  0%, 100% { transform: translateX(0); }
+  25%       { transform: translateX(-4px) rotate(-3deg); }
+  75%       { transform: translateX(4px)  rotate(3deg); }
+}
+
+@keyframes calm-worker {
+  0%, 100% { transform: translateY(0); }
+  50%       { transform: translateY(-3px); }
+}
+
+@keyframes celebrate {
+  0%, 100% { transform: translateY(0) scale(1); }
+  40%       { transform: translateY(-8px) scale(1.1); }
+  60%       { transform: translateY(-6px) scale(1.05); }
+}
+
+.animate-panic {
+  animation: panic 0.4s ease-in-out infinite;
+}
+
+.animate-calm-worker {
+  animation: calm-worker 2.5s ease-in-out infinite;
+}
+
+.animate-celebrate {
+  animation: celebrate 0.7s ease-in-out infinite;
+}
