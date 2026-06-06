@@ -31,14 +31,14 @@ export default function BadgeDisplay({
         label="Chad of the Day"
         name={chadName ?? '—'}
         color="#F59E0B"
-        subtitle={chadName ? `${chadPoints} pts` : 'Not yet assigned'}
+        subtitle={chadName && chadPoints != null ? `${chadPoints} pts` : 'Not yet assigned'}
       />
       <BadgeCard
         emoji="💀"
         label="Chud of the Day"
         name={chudName ?? 'None'}
         color="#DC2626"
-        subtitle={chudName ? `${chudMissed} missed` : 'Everyone held it down'}
+        subtitle={chudName && chudMissed != null ? `${chudMissed} missed` : 'Everyone held it down'}
       />
     </div>
   )
