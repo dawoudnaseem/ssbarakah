@@ -310,6 +310,17 @@
 
 ---
 
+## ✅ Icy Modal System & Delete Task (2026-06-06)
+
+- [x] Created `src/components/IcyModal.tsx` — shared base wrapper with SVG icicles, glossy-ice card, backdrop blur, ESC key handler, role="dialog"
+- [x] Retrofitted `IcyErrorModal` and `LoginModal` to use `IcyModal`
+- [x] Created `DeleteConfirmModal` with today-only / forever variants for recurring tasks
+- [x] Added red ✕ delete button to `TaskRow`; wired `deleteTask` handler in teammate dashboard
+
+> **Note for all future tasks:** Any new modal must use `<IcyModal>` as its wrapper. Do not hand-roll backdrop/card styles.
+
+---
+
 ## Task 9 — Leaderboard
 
 ### 9.1 Build leaderboard component

@@ -96,10 +96,12 @@ src/
     history/
       (not yet built — Task 13)
   components/
+    IcyModal.tsx                    — base modal wrapper: backdrop + SVG icicles + glossy-ice card shell; all modals use this
     ConditionalNav.tsx              — hides NavBar on /login; renders h-14 spacer elsewhere
     NavBar.tsx                      — fixed top bar; logo, nav links, avatar dropdown, hamburger
-    LoginModal.tsx                  — overlay login form triggered from NavBar
-    IcyErrorModal.tsx               — frosted glass error modal (red border, dismiss on click)
+    LoginModal.tsx                  — overlay login form triggered from NavBar; uses IcyModal
+    IcyErrorModal.tsx               — frosted glass error modal (red border, dismiss on click); uses IcyModal
+    DeleteConfirmModal.tsx          — delete task confirmation; 2-btn (non-recurring) or 3-btn (recurring) variant; uses IcyModal
   lib/
     supabaseClient.ts               — singleton Supabase browser client
     auth.ts                         — loginTeammate, logoutTeammate, getCurrentTeammate, admin helpers
@@ -359,6 +361,30 @@ Most logic was already in place from Task 7. This task confirmed and completed t
 - **New:** Added `hasNoRequiredTasks` check in `src/app/page.tsx`; when no required tasks exist the progress bar label shows "No repairs assigned yet" and a sub-line "Choose your tasks to begin today's mission." instead of the percentage
 
 All 47 tests still passing.
+
+---
+
+### ✅ Icy Modal System & Delete Task (2026-06-06)
+
+**IcyModal (`src/components/IcyModal.tsx`):**
+- Shared base wrapper for all modals — provides backdrop blur, `role="dialog"`, ESC key handler, SVG icicle strip along top inner edge (8 icicles, heights 22–46px, semi-transparent white-blue), glossy-ice card (white-tinted gradient → navy, bright ice-white border, inset highlight sheen)
+- Props: `onClose`, `children`, `accentColor?` (default `#9DD8F7`), `maxWidth?` (default `max-w-sm`)
+- **All future modals must use this wrapper — do not hand-roll backdrop/card styles**
+
+**Retrofitted modals:**
+- `IcyErrorModal` — now uses `<IcyModal accentColor="#DC2626">`; content (❄️ icon, red message, Dismiss button) unchanged
+- `LoginModal` — now uses `<IcyModal>`; content (ship SVG, inputs, Board button) unchanged
+
+**DeleteConfirmModal (`src/components/DeleteConfirmModal.tsx`):**
+- Non-recurring task: Cancel + Remove (red)
+- Recurring task: Cancel + Remove today only + Remove forever
+- "Remove forever" deletes `recurring_tasks` row so task never seeds again; "Remove today only" leaves it intact
+
+**Teammate dashboard changes (`src/app/teammate/[teammateId]/page.tsx`):**
+- `recurringTasks` stored in state (populated from existing seed effect)
+- `taskToDelete: DailyTask | null` state controls modal visibility
+- `deleteTask(task, scope)` — optimistic removal, deletes `task_completions` then `daily_tasks`, optionally `recurring_tasks`
+- `TaskRow` gains `onDelete` prop and a red ✕ button (44px tap target) to the left of the complete button
 
 ---
 

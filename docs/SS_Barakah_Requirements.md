@@ -225,8 +225,8 @@ Layout (full-screen Arctic scene):
 
 Error handling:
 
-- Failed login shows an icy modal overlay (frosted glass, red-tinted border) with the error message. Not an inline error under the inputs.
-- Modal dismisses on button click or outside tap.
+- Failed login shows an icy modal overlay with the error message. Not an inline error under the inputs.
+- Modal dismisses on button click, outside tap, or ESC key.
 
 Post-login:
 
@@ -403,6 +403,17 @@ Each task should have:
 - Repeatable status
 - Max completions per day, if repeatable
 - Current completion count
+
+### Task Deletion
+
+Any task (required, optional, completed, or pending) can be removed by pressing the ✕ button on its row. A `DeleteConfirmModal` appears:
+
+- **Non-recurring task:** Cancel + Remove
+- **Recurring task:** Cancel + Remove today only + Remove forever
+  - "Remove today only" deletes only the `daily_tasks` row for today; the `recurring_tasks` rule stays, so the task seeds again tomorrow
+  - "Remove forever" deletes the `daily_tasks` row and the `recurring_tasks` rule; the task will never seed again
+
+The modal dismisses on Cancel, backdrop click, or ESC key.
 
 ### Pomodoro Timer
 
@@ -1348,8 +1359,10 @@ Suggested reusable components:
 
 - `NavBar` — persistent top nav with login modal and context-aware right side
 - `ConditionalNav` — hides NavBar on `/login` using `usePathname`
-- `LoginModal` — modal version of the login form, used in NavBar
-- `IcyErrorModal` — frosted glass red-tinted error overlay used on both login page and login modal
+- `IcyModal` — **base wrapper for all modals**: backdrop blur, `role="dialog"`, ESC key handler, SVG icicles hanging from top inner rim, glossy-ice card (white-tinted gradient, bright ice-white border, inset highlight). All future modals must use this wrapper — do not hand-roll backdrop/card styles.
+- `LoginModal` — modal version of the login form, used in NavBar; uses `IcyModal`
+- `IcyErrorModal` — red-tinted error overlay used on login page and login modal; uses `IcyModal`
+- `DeleteConfirmModal` — delete task confirmation; 2-btn for non-recurring tasks, 3-btn for recurring (remove today only / remove forever); uses `IcyModal`
 - `IntroAnimation` — daily crash animation sequence with skip button
 - `ShipScene`
 - `ProgressBar`
