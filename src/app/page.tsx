@@ -5,24 +5,9 @@ import { supabase } from '@/lib/supabaseClient'
 import { todayString } from '@/lib/dateUtils'
 import { calculateTeamProgress } from '@/lib/calculations'
 import type { Teammate, DailyTask, DailyResult } from '@/types/database'
+import type { LeaderboardEntry, RecentCompletion } from '@/types/leaderboard'
 
 // ─── Types ────────────────────────────────────────────────────────────────────
-
-interface LeaderboardEntry {
-  teammate: Teammate
-  points: number
-  completedRequired: number
-  totalRequired: number
-  missedRequired: number
-}
-
-interface RecentCompletion {
-  id: string
-  completed_at: string
-  points_awarded: number
-  task_name: string
-  teammate_name: string
-}
 
 type MissionStatus = 'CRITICAL' | 'DAMAGED' | 'STABILIZING' | 'ALMOST REPAIRED' | 'SURVIVED' | 'SUNK'
 
