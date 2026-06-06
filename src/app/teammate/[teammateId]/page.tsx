@@ -1,7 +1,735 @@
-export default function TeammatePage({ params }: { params: { teammateId: string } }) {
+'use client'
+
+import { use, useEffect, useState, useCallback } from 'react'
+import { useRouter } from 'next/navigation'
+import { getCurrentTeammate, logoutTeammate } from '@/lib/auth'
+import { supabase } from '@/lib/supabaseClient'
+import { todayString } from '@/lib/dateUtils'
+import type { Teammate, DailyTask, PresetTask, RecurringTask } from '@/types/database'
+
+// ─── Types ────────────────────────────────────────────────────────────────────
+
+interface AddTaskForm {
+  name: string
+  description: string
+  category: string
+  points: number
+  is_required: boolean
+  is_repeatable: boolean
+  max_completions: number
+  is_recurring: boolean
+}
+
+const DEFAULT_FORM: AddTaskForm = {
+  name: '',
+  description: '',
+  category: 'general',
+  points: 10,
+  is_required: true,
+  is_repeatable: false,
+  max_completions: 1,
+  is_recurring: false,
+}
+
+// ─── Helper ───────────────────────────────────────────────────────────────────
+
+function calcPoints(tasks: DailyTask[]): number {
+  return tasks.reduce((sum, t) => sum + (t.is_completed ? t.points * t.completion_count : 0), 0)
+}
+
+// ─── Page ─────────────────────────────────────────────────────────────────────
+
+export default function TeammatePage({ params }: { params: Promise<{ teammateId: string }> }) {
+  const { teammateId } = use(params)
+  const router = useRouter()
+
+  const [teammate, setTeammate] = useState<Teammate | null>(null)
+  const [tasks, setTasks] = useState<DailyTask[]>([])
+  const [presets, setPresets] = useState<PresetTask[]>([])
+  const [streak, setStreak] = useState(0)
+  const [loading, setLoading] = useState(true)
+
+  const [showAddForm, setShowAddForm] = useState(false)
+  const [showPresetModal, setShowPresetModal] = useState(false)
+  const [form, setForm] = useState<AddTaskForm>(DEFAULT_FORM)
+  const [formBusy, setFormBusy] = useState(false)
+  const [formError, setFormError] = useState('')
+
+  const today = todayString()
+
+  // ── Auth guard ──────────────────────────────────────────────────────────────
+  useEffect(() => {
+    const current = getCurrentTeammate()
+    if (!current) {
+      router.replace('/login')
+      return
+    }
+    setTeammate(current)
+  }, [router])
+
+  // ── Fetch tasks + streak ────────────────────────────────────────────────────
+  const fetchTasks = useCallback(async () => {
+    if (!teammateId) return
+    const { data } = await supabase
+      .from('daily_tasks')
+      .select('*')
+      .eq('teammate_id', teammateId)
+      .eq('task_date', today)
+      .order('created_at', { ascending: true })
+    setTasks((data as DailyTask[]) ?? [])
+  }, [teammateId, today])
+
+  const fetchStreak = useCallback(async () => {
+    if (!teammateId) return
+    const { data } = await supabase
+      .from('teammate_daily_stats')
+      .select('stat_date, completed_all_required')
+      .eq('teammate_id', teammateId)
+      .order('stat_date', { ascending: false })
+      .limit(365)
+    if (!data) return
+    let s = 0
+    for (const row of data) {
+      if (row.completed_all_required) s++
+      else break
+    }
+    setStreak(s)
+  }, [teammateId])
+
+  const fetchPresets = useCallback(async () => {
+    const { data } = await supabase.from('preset_tasks').select('*').order('name')
+    setPresets((data as PresetTask[]) ?? [])
+  }, [])
+
+  useEffect(() => {
+    if (!teammate) return
+    Promise.all([fetchTasks(), fetchStreak(), fetchPresets()]).then(() => setLoading(false))
+  }, [teammate, fetchTasks, fetchStreak, fetchPresets])
+
+  // ── Ensure recurring tasks exist for today ──────────────────────────────────
+  useEffect(() => {
+    if (!teammateId) return
+    async function seedRecurring() {
+      const { data: recurring } = await supabase
+        .from('recurring_tasks')
+        .select('*')
+        .eq('teammate_id', teammateId)
+        .eq('is_active', true)
+      if (!recurring || recurring.length === 0) return
+
+      const today2 = todayString()
+      const todayDow = new Date(today2 + 'T12:00:00').toLocaleDateString('en-US', { weekday: 'long' })
+
+      for (const rt of recurring as RecurringTask[]) {
+        const applies =
+          rt.recurrence_type === 'daily' ||
+          (rt.recurrence_type === 'weekly' && rt.recurrence_days?.includes(todayDow)) ||
+          (rt.recurrence_type === 'custom_days' && rt.recurrence_days?.includes(todayDow))
+        if (!applies) continue
+
+        const { count } = await supabase
+          .from('daily_tasks')
+          .select('id', { count: 'exact', head: true })
+          .eq('teammate_id', teammateId)
+          .eq('task_date', today2)
+          .eq('preset_task_id', rt.preset_task_id ?? '')
+        if ((count ?? 0) > 0) continue
+
+        await supabase.from('daily_tasks').insert({
+          teammate_id: teammateId,
+          preset_task_id: rt.preset_task_id,
+          name: rt.name,
+          description: rt.description,
+          category: rt.category,
+          points: rt.points,
+          is_required: rt.is_required,
+          is_completed: false,
+          is_repeatable: rt.is_repeatable,
+          max_completions: rt.max_completions,
+          completion_count: 0,
+          task_date: today2,
+        })
+      }
+      await fetchTasks()
+    }
+    seedRecurring()
+  }, [teammateId, fetchTasks])
+
+  // ── Task completion ─────────────────────────────────────────────────────────
+  async function completeTask(task: DailyTask) {
+    if (task.is_completed && !task.is_repeatable) return
+    if (task.is_repeatable && task.completion_count >= task.max_completions) return
+
+    const newCount = task.completion_count + 1
+    const nowCompleted = true
+
+    // Optimistic update
+    setTasks(prev =>
+      prev.map(t =>
+        t.id === task.id ? { ...t, is_completed: nowCompleted, completion_count: newCount } : t
+      )
+    )
+
+    const [{ error: updateErr }] = await Promise.all([
+      supabase
+        .from('daily_tasks')
+        .update({ is_completed: nowCompleted, completion_count: newCount, updated_at: new Date().toISOString() })
+        .eq('id', task.id),
+      supabase.from('task_completions').insert({
+        daily_task_id: task.id,
+        teammate_id: teammateId,
+        points_awarded: task.points,
+        completed_at: new Date().toISOString(),
+        task_date: today,
+      }),
+    ])
+
+    if (updateErr) await fetchTasks()
+  }
+
+  // ── Add custom task ─────────────────────────────────────────────────────────
+  async function submitAddTask(e: React.FormEvent) {
+    e.preventDefault()
+    if (!form.name.trim()) return
+    setFormBusy(true)
+    setFormError('')
+
+    const { data: inserted, error } = await supabase
+      .from('daily_tasks')
+      .insert({
+        teammate_id: teammateId,
+        name: form.name.trim(),
+        description: form.description.trim() || null,
+        category: form.category,
+        points: form.points,
+        is_required: form.is_required,
+        is_completed: false,
+        is_repeatable: form.is_repeatable,
+        max_completions: form.is_repeatable ? form.max_completions : 1,
+        completion_count: 0,
+        task_date: today,
+      })
+      .select()
+      .single()
+
+    if (error || !inserted) {
+      setFormError('Failed to add task. Try again.')
+      setFormBusy(false)
+      return
+    }
+
+    if (form.is_recurring) {
+      await supabase.from('recurring_tasks').insert({
+        teammate_id: teammateId,
+        preset_task_id: null,
+        name: form.name.trim(),
+        description: form.description.trim() || null,
+        category: form.category,
+        points: form.points,
+        is_required: form.is_required,
+        is_repeatable: form.is_repeatable,
+        max_completions: form.is_repeatable ? form.max_completions : 1,
+        recurrence_type: 'daily',
+        recurrence_days: null,
+        is_active: true,
+      })
+    }
+
+    setForm(DEFAULT_FORM)
+    setShowAddForm(false)
+    setFormBusy(false)
+    await fetchTasks()
+  }
+
+  // ── Add preset task ─────────────────────────────────────────────────────────
+  async function addPresetTask(preset: PresetTask, recurring: boolean) {
+    const { data: inserted, error } = await supabase
+      .from('daily_tasks')
+      .insert({
+        teammate_id: teammateId,
+        preset_task_id: preset.id,
+        name: preset.name,
+        description: preset.description,
+        category: preset.category,
+        points: preset.default_points,
+        is_required: true,
+        is_completed: false,
+        is_repeatable: preset.is_repeatable,
+        max_completions: preset.default_max_completions,
+        completion_count: 0,
+        task_date: today,
+      })
+      .select()
+      .single()
+
+    if (error || !inserted) return
+
+    if (recurring && preset.can_be_recurring) {
+      await supabase.from('recurring_tasks').insert({
+        teammate_id: teammateId,
+        preset_task_id: preset.id,
+        name: preset.name,
+        description: preset.description,
+        category: preset.category,
+        points: preset.default_points,
+        is_required: true,
+        is_repeatable: preset.is_repeatable,
+        max_completions: preset.default_max_completions,
+        recurrence_type: 'daily',
+        recurrence_days: null,
+        is_active: true,
+      })
+    }
+
+    setShowPresetModal(false)
+    await fetchTasks()
+  }
+
+  // ── Logout ──────────────────────────────────────────────────────────────────
+  function handleLogout() {
+    logoutTeammate()
+    router.replace('/login')
+  }
+
+  // ── Derived state ───────────────────────────────────────────────────────────
+  const required = tasks.filter(t => t.is_required)
+  const optional = tasks.filter(t => !t.is_required)
+  const completedRequired = required.filter(t => t.is_completed).length
+  const totalRequired = required.length
+  const points = calcPoints(tasks)
+  const isChadBadge = teammate?.current_chad
+  const isChadChud = teammate?.current_chud
+
+  if (loading) {
+    return (
+      <main className="min-h-screen flex items-center justify-center" style={{ background: '#061826' }}>
+        <p style={{ color: '#9DD8F7' }}>Loading…</p>
+      </main>
+    )
+  }
+
   return (
-    <main className="min-h-screen flex items-center justify-center" style={{ background: '#061826', color: '#F2FBFF' }}>
-      <p>Teammate dashboard coming soon — ID: {params.teammateId}</p>
+    <main
+      className="min-h-screen px-4 py-6"
+      style={{ background: 'linear-gradient(180deg, #061826 0%, #0B3558 100%)', color: '#F2FBFF' }}
+    >
+      <div className="max-w-2xl mx-auto flex flex-col gap-6">
+
+        {/* ── Header ── */}
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-2xl font-bold tracking-wide" style={{ color: '#F2FBFF' }}>
+              {teammate?.name ?? ''}
+            </h1>
+            <div className="flex items-center gap-2 mt-1">
+              {isChadBadge && (
+                <span className="text-xs font-bold px-2 py-0.5 rounded-full" style={{ background: '#F59E0B', color: '#061826' }}>
+                  ⚓ Chad of the Day
+                </span>
+              )}
+              {isChadChud && (
+                <span className="text-xs font-bold px-2 py-0.5 rounded-full" style={{ background: '#DC2626', color: '#F2FBFF' }}>
+                  💀 Chud of the Day
+                </span>
+              )}
+            </div>
+          </div>
+          <button
+            onClick={handleLogout}
+            className="text-xs px-3 py-2 rounded-lg transition-opacity hover:opacity-70"
+            style={{ background: 'rgba(157,216,247,0.1)', border: '1px solid rgba(157,216,247,0.2)', color: '#9DD8F7' }}
+          >
+            Log out
+          </button>
+        </div>
+
+        {/* ── Stats row ── */}
+        <div className="grid grid-cols-3 gap-3">
+          {[
+            { label: 'Points Today', value: points },
+            { label: 'Tasks Done', value: `${completedRequired} / ${totalRequired}` },
+            { label: 'Streak', value: `${streak}d` },
+          ].map(s => (
+            <div
+              key={s.label}
+              className="rounded-xl p-3 text-center"
+              style={{ background: 'rgba(11,53,88,0.6)', border: '1px solid rgba(157,216,247,0.15)' }}
+            >
+              <p className="text-2xl font-bold" style={{ color: '#9DD8F7' }}>{s.value}</p>
+              <p className="text-xs mt-0.5" style={{ color: 'rgba(242,251,255,0.55)' }}>{s.label}</p>
+            </div>
+          ))}
+        </div>
+
+        {/* ── Heatmap placeholder ── */}
+        <div
+          className="rounded-xl p-4"
+          style={{ background: 'rgba(11,53,88,0.4)', border: '1px solid rgba(157,216,247,0.1)' }}
+        >
+          <p className="text-xs font-semibold uppercase tracking-widest mb-2" style={{ color: '#9DD8F7' }}>Activity Heatmap</p>
+          <p className="text-xs" style={{ color: 'rgba(242,251,255,0.4)' }}>Heatmap coming in Task 14</p>
+        </div>
+
+        {/* ── Required tasks ── */}
+        <section>
+          <p className="text-xs font-semibold uppercase tracking-widest mb-3" style={{ color: '#9DD8F7' }}>
+            Required Repairs ({completedRequired}/{totalRequired})
+          </p>
+          {required.length === 0 ? (
+            <p className="text-sm" style={{ color: 'rgba(242,251,255,0.4)' }}>No required tasks yet — add some below.</p>
+          ) : (
+            <ul className="flex flex-col gap-2">
+              {required.map(task => (
+                <TaskRow key={task.id} task={task} onComplete={completeTask} />
+              ))}
+            </ul>
+          )}
+        </section>
+
+        {/* ── Optional tasks ── */}
+        {optional.length > 0 && (
+          <section>
+            <p className="text-xs font-semibold uppercase tracking-widest mb-3" style={{ color: '#9DD8F7' }}>Optional Tasks</p>
+            <ul className="flex flex-col gap-2">
+              {optional.map(task => (
+                <TaskRow key={task.id} task={task} onComplete={completeTask} />
+              ))}
+            </ul>
+          </section>
+        )}
+
+        {/* ── Action buttons ── */}
+        <div className="flex gap-3">
+          <button
+            onClick={() => { setShowAddForm(v => !v); setShowPresetModal(false) }}
+            className="flex-1 py-3 rounded-xl text-sm font-semibold transition-opacity hover:opacity-80"
+            style={{ background: '#9DD8F7', color: '#061826' }}
+          >
+            + Custom Task
+          </button>
+          <button
+            onClick={() => { setShowPresetModal(v => !v); setShowAddForm(false) }}
+            className="flex-1 py-3 rounded-xl text-sm font-semibold transition-opacity hover:opacity-80"
+            style={{ background: 'rgba(157,216,247,0.15)', border: '1px solid rgba(157,216,247,0.3)', color: '#9DD8F7' }}
+          >
+            From Presets
+          </button>
+        </div>
+
+        {/* ── Add custom task form ── */}
+        {showAddForm && (
+          <form
+            onSubmit={submitAddTask}
+            className="rounded-xl p-5 flex flex-col gap-4"
+            style={{ background: 'rgba(11,53,88,0.7)', border: '1px solid rgba(157,216,247,0.2)' }}
+          >
+            <p className="text-sm font-bold" style={{ color: '#9DD8F7' }}>New Custom Task</p>
+
+            <Field label="Task Name">
+              <input
+                required
+                value={form.name}
+                onChange={e => setForm(f => ({ ...f, name: e.target.value }))}
+                placeholder="e.g. Review notes"
+                className="w-full rounded-lg px-3 py-2 text-sm outline-none"
+                style={inputStyle}
+              />
+            </Field>
+
+            <Field label="Description (optional)">
+              <input
+                value={form.description}
+                onChange={e => setForm(f => ({ ...f, description: e.target.value }))}
+                placeholder="Short description"
+                className="w-full rounded-lg px-3 py-2 text-sm outline-none"
+                style={inputStyle}
+              />
+            </Field>
+
+            <div className="grid grid-cols-2 gap-3">
+              <Field label="Category">
+                <select
+                  value={form.category}
+                  onChange={e => setForm(f => ({ ...f, category: e.target.value }))}
+                  className="w-full rounded-lg px-3 py-2 text-sm outline-none"
+                  style={inputStyle}
+                >
+                  <option value="general">General</option>
+                  <option value="islamic">Islamic</option>
+                  <option value="health">Health</option>
+                  <option value="learning">Learning</option>
+                  <option value="work">Work</option>
+                </select>
+              </Field>
+              <Field label="Points">
+                <input
+                  type="number"
+                  min={1}
+                  max={1000}
+                  value={form.points}
+                  onChange={e => setForm(f => ({ ...f, points: Number(e.target.value) }))}
+                  className="w-full rounded-lg px-3 py-2 text-sm outline-none"
+                  style={inputStyle}
+                />
+              </Field>
+            </div>
+
+            <div className="flex flex-col gap-2">
+              <Toggle
+                label="Required task"
+                checked={form.is_required}
+                onChange={v => setForm(f => ({ ...f, is_required: v }))}
+              />
+              <Toggle
+                label="Repeatable"
+                checked={form.is_repeatable}
+                onChange={v => setForm(f => ({ ...f, is_repeatable: v }))}
+              />
+              {form.is_repeatable && (
+                <Field label="Max completions per day">
+                  <input
+                    type="number"
+                    min={2}
+                    max={100}
+                    value={form.max_completions}
+                    onChange={e => setForm(f => ({ ...f, max_completions: Number(e.target.value) }))}
+                    className="w-full rounded-lg px-3 py-2 text-sm outline-none"
+                    style={inputStyle}
+                  />
+                </Field>
+              )}
+              <Toggle
+                label="Repeat every day (recurring)"
+                checked={form.is_recurring}
+                onChange={v => setForm(f => ({ ...f, is_recurring: v }))}
+              />
+            </div>
+
+            {formError && (
+              <p className="text-xs rounded-lg py-2 px-3 text-center" style={{ background: 'rgba(220,38,38,0.15)', color: '#fca5a5' }}>
+                {formError}
+              </p>
+            )}
+
+            <div className="flex gap-3">
+              <button
+                type="submit"
+                disabled={formBusy}
+                className="flex-1 py-2.5 rounded-lg text-sm font-semibold disabled:opacity-50"
+                style={{ background: '#9DD8F7', color: '#061826' }}
+              >
+                {formBusy ? 'Adding…' : 'Add Task'}
+              </button>
+              <button
+                type="button"
+                onClick={() => { setShowAddForm(false); setForm(DEFAULT_FORM) }}
+                className="flex-1 py-2.5 rounded-lg text-sm"
+                style={{ background: 'rgba(157,216,247,0.1)', color: '#9DD8F7' }}
+              >
+                Cancel
+              </button>
+            </div>
+          </form>
+        )}
+
+        {/* ── Preset task modal ── */}
+        {showPresetModal && (
+          <PresetModal
+            presets={presets}
+            onAdd={addPresetTask}
+            onClose={() => setShowPresetModal(false)}
+          />
+        )}
+
+        {/* ── Nav links ── */}
+        <div className="flex gap-3 pt-2">
+          <button
+            onClick={() => router.push('/')}
+            className="flex-1 py-2 rounded-lg text-xs"
+            style={{ background: 'rgba(157,216,247,0.08)', border: '1px solid rgba(157,216,247,0.15)', color: 'rgba(242,251,255,0.6)' }}
+          >
+            Ship Dashboard
+          </button>
+          <button
+            onClick={() => router.push('/history')}
+            className="flex-1 py-2 rounded-lg text-xs"
+            style={{ background: 'rgba(157,216,247,0.08)', border: '1px solid rgba(157,216,247,0.15)', color: 'rgba(242,251,255,0.6)' }}
+          >
+            History
+          </button>
+        </div>
+      </div>
     </main>
   )
+}
+
+// ─── Sub-components ───────────────────────────────────────────────────────────
+
+function TaskRow({ task, onComplete }: { task: DailyTask; onComplete: (t: DailyTask) => void }) {
+  const done = task.is_completed
+  const atMax = task.is_repeatable && task.completion_count >= task.max_completions
+  const disabled = (done && !task.is_repeatable) || atMax
+
+  return (
+    <li
+      className="flex items-center justify-between gap-3 rounded-xl px-4 py-3"
+      style={{
+        background: done ? 'rgba(34,197,94,0.08)' : 'rgba(11,53,88,0.5)',
+        border: `1px solid ${done ? 'rgba(34,197,94,0.25)' : 'rgba(157,216,247,0.1)'}`,
+      }}
+    >
+      <div className="flex-1 min-w-0">
+        <p
+          className="text-sm font-medium truncate"
+          style={{ color: done ? 'rgba(242,251,255,0.5)' : '#F2FBFF', textDecoration: done && !task.is_repeatable ? 'line-through' : 'none' }}
+        >
+          {task.name}
+        </p>
+        <div className="flex items-center gap-2 mt-0.5 flex-wrap">
+          <span className="text-xs" style={{ color: '#9DD8F7' }}>{task.points} pts</span>
+          {task.is_repeatable && (
+            <span className="text-xs" style={{ color: 'rgba(242,251,255,0.4)' }}>
+              {task.completion_count}/{task.max_completions}
+            </span>
+          )}
+          {task.category === 'islamic' && (
+            <span className="text-xs px-1.5 py-0.5 rounded" style={{ background: 'rgba(245,158,11,0.15)', color: '#F59E0B' }}>
+              ☾ Islamic
+            </span>
+          )}
+        </div>
+      </div>
+      <button
+        disabled={disabled}
+        onClick={() => onComplete(task)}
+        className="shrink-0 w-10 h-10 rounded-lg flex items-center justify-center text-sm font-bold transition-opacity disabled:opacity-30"
+        style={{
+          background: done && !task.is_repeatable ? 'rgba(34,197,94,0.2)' : '#9DD8F7',
+          color: '#061826',
+          minHeight: '44px',
+          minWidth: '44px',
+        }}
+        aria-label={done ? 'Completed' : 'Mark complete'}
+      >
+        {done && !task.is_repeatable ? '✓' : '+'}
+      </button>
+    </li>
+  )
+}
+
+function PresetModal({
+  presets,
+  onAdd,
+  onClose,
+}: {
+  presets: PresetTask[]
+  onAdd: (preset: PresetTask, recurring: boolean) => void
+  onClose: () => void
+}) {
+  const [recurring, setRecurring] = useState(false)
+  const islamic = presets.filter(p => p.is_islamic)
+  const regular = presets.filter(p => !p.is_islamic)
+
+  return (
+    <div
+      className="rounded-xl p-5 flex flex-col gap-4"
+      style={{ background: 'rgba(11,53,88,0.85)', border: '1px solid rgba(157,216,247,0.2)' }}
+    >
+      <div className="flex items-center justify-between">
+        <p className="text-sm font-bold" style={{ color: '#9DD8F7' }}>Select Preset Task</p>
+        <button onClick={onClose} className="text-xs" style={{ color: 'rgba(242,251,255,0.5)' }}>✕ Close</button>
+      </div>
+
+      <Toggle label="Repeat every day (recurring)" checked={recurring} onChange={setRecurring} />
+
+      {islamic.length > 0 && (
+        <div>
+          <p className="text-xs font-semibold uppercase tracking-widest mb-2" style={{ color: '#F59E0B' }}>Islamic Tasks</p>
+          <ul className="flex flex-col gap-2">
+            {islamic.map(p => (
+              <PresetRow key={p.id} preset={p} onAdd={preset => onAdd(preset, recurring)} />
+            ))}
+          </ul>
+        </div>
+      )}
+
+      {regular.length > 0 && (
+        <div>
+          <p className="text-xs font-semibold uppercase tracking-widest mb-2" style={{ color: '#9DD8F7' }}>Regular Tasks</p>
+          <ul className="flex flex-col gap-2">
+            {regular.map(p => (
+              <PresetRow key={p.id} preset={p} onAdd={preset => onAdd(preset, recurring)} />
+            ))}
+          </ul>
+        </div>
+      )}
+    </div>
+  )
+}
+
+function PresetRow({ preset, onAdd }: { preset: PresetTask; onAdd: (p: PresetTask) => void }) {
+  return (
+    <li
+      className="flex items-center justify-between gap-3 rounded-xl px-4 py-3"
+      style={{ background: 'rgba(6,24,38,0.5)', border: '1px solid rgba(157,216,247,0.1)' }}
+    >
+      <div className="flex-1 min-w-0">
+        <p className="text-sm font-medium truncate" style={{ color: '#F2FBFF' }}>{preset.name}</p>
+        <div className="flex items-center gap-2 mt-0.5">
+          <span className="text-xs" style={{ color: '#9DD8F7' }}>{preset.default_points} pts</span>
+          {preset.is_repeatable && (
+            <span className="text-xs" style={{ color: 'rgba(242,251,255,0.4)' }}>
+              repeatable ×{preset.default_max_completions}
+            </span>
+          )}
+        </div>
+      </div>
+      <button
+        onClick={() => onAdd(preset)}
+        className="shrink-0 px-3 py-2 rounded-lg text-xs font-semibold"
+        style={{ background: '#9DD8F7', color: '#061826', minHeight: '44px' }}
+      >
+        Add
+      </button>
+    </li>
+  )
+}
+
+function Field({ label, children }: { label: string; children: React.ReactNode }) {
+  return (
+    <div className="flex flex-col gap-1">
+      <label className="text-xs font-semibold uppercase tracking-widest" style={{ color: '#9DD8F7' }}>
+        {label}
+      </label>
+      {children}
+    </div>
+  )
+}
+
+function Toggle({ label, checked, onChange }: { label: string; checked: boolean; onChange: (v: boolean) => void }) {
+  return (
+    <label className="flex items-center justify-between cursor-pointer gap-3">
+      <span className="text-sm" style={{ color: 'rgba(242,251,255,0.75)' }}>{label}</span>
+      <button
+        type="button"
+        role="switch"
+        aria-checked={checked}
+        onClick={() => onChange(!checked)}
+        className="relative w-10 h-6 rounded-full transition-colors"
+        style={{ background: checked ? '#9DD8F7' : 'rgba(157,216,247,0.2)', minWidth: '40px', minHeight: '24px' }}
+      >
+        <span
+          className="absolute top-1 left-1 w-4 h-4 rounded-full transition-transform"
+          style={{ background: '#061826', transform: checked ? 'translateX(16px)' : 'translateX(0)' }}
+        />
+      </button>
+    </label>
+  )
+}
+
+const inputStyle: React.CSSProperties = {
+  background: 'rgba(6,24,38,0.7)',
+  border: '1px solid rgba(157,216,247,0.25)',
+  color: '#F2FBFF',
+  caretColor: '#9DD8F7',
 }

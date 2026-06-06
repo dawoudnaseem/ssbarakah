@@ -1,0 +1,69 @@
+<h2>Login Page Layout — Pick One</h2>
+<p class="subtitle">Three directions for the new login page. Click a card to select it.</p>
+
+<div class="options">
+
+  <div class="option" data-choice="a" onclick="toggleSelect(this)">
+    <div class="letter">A</div>
+    <div class="content">
+      <h3>Ship center · Login strip docked to ocean</h3>
+      <p>The ship is huge and centered on screen. Two icebergs flank it on either side. The login is a slim horizontal bar sitting right on top of the ocean at the very bottom — name, password, button all in one row. No card blocking the scene at all.</p>
+      <div style="margin-top:10px;background:#061826;border-radius:8px;padding:12px;font-family:monospace;font-size:11px;color:#9DD8F7;line-height:1.8;">
+        <div style="text-align:center;color:rgba(255,255,255,.3);font-size:10px;">⭐ · · · ⭐ · ⭐</div>
+        <div style="text-align:center;font-size:18px;margin:6px 0;">⛵</div>
+        <div style="text-align:center;color:rgba(157,216,247,.5);font-size:10px;">〰〰〰〰〰〰〰〰</div>
+        <div style="background:rgba(11,53,88,.8);border-top:1px solid rgba(157,216,247,.3);margin:4px -12px -12px;padding:6px 12px;border-radius:0 0 8px 8px;display:flex;gap:6px;align-items:center;font-size:10px;">
+          <span style="color:#F2FBFF;font-weight:bold;white-space:nowrap;">S.S. Barakah</span>
+          <span style="background:rgba(6,24,38,.8);border:1px solid rgba(157,216,247,.3);border-radius:4px;padding:2px 6px;color:rgba(255,255,255,.5);flex:1;">[Name]</span>
+          <span style="background:rgba(6,24,38,.8);border:1px solid rgba(157,216,247,.3);border-radius:4px;padding:2px 6px;color:rgba(255,255,255,.5);flex:1;">[Password]</span>
+          <span style="background:#9DD8F7;color:#061826;font-weight:bold;border-radius:4px;padding:2px 8px;white-space:nowrap;">Board →</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="option" data-choice="b" onclick="toggleSelect(this)">
+    <div class="letter">B</div>
+    <div class="content">
+      <h3>Ship tilting toward massive iceberg · Card bottom-left</h3>
+      <p>A huge iceberg looms on the right side. The ship tilts hard toward it — looks like impact is imminent. The login card is compact and anchored bottom-left, so it doesn't block the drama. Feels urgent and narrative.</p>
+      <div style="margin-top:10px;background:#061826;border-radius:8px;padding:12px;font-family:monospace;font-size:11px;color:#9DD8F7;line-height:1.8;position:relative;min-height:80px;">
+        <div style="text-align:center;color:rgba(255,255,255,.3);font-size:10px;">⭐ · · ⭐ · · ⭐</div>
+        <div style="display:flex;justify-content:space-between;align-items:flex-end;margin-top:4px;">
+          <span style="font-size:22px;transform:rotate(-15deg);display:inline-block;">⛵</span>
+          <span style="font-size:28px;">🧊</span>
+        </div>
+        <div style="color:rgba(157,216,247,.5);font-size:10px;text-align:center;">〰〰〰〰〰〰〰〰</div>
+        <div style="position:absolute;bottom:12px;left:12px;background:rgba(11,53,88,.9);border:1px solid rgba(157,216,247,.2);border-radius:8px;padding:6px 8px;font-size:10px;min-width:130px;">
+          <div style="color:#F2FBFF;font-weight:bold;margin-bottom:4px;">S.S. Barakah</div>
+          <div style="background:rgba(6,24,38,.8);border:1px solid rgba(157,216,247,.3);border-radius:4px;padding:2px 6px;color:rgba(255,255,255,.4);margin-bottom:3px;">[Name]</div>
+          <div style="background:rgba(6,24,38,.8);border:1px solid rgba(157,216,247,.3);border-radius:4px;padding:2px 6px;color:rgba(255,255,255,.4);margin-bottom:4px;">[Password]</div>
+          <div style="background:#9DD8F7;color:#061826;font-weight:bold;border-radius:4px;padding:2px 6px;text-align:center;">Board →</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="option" data-choice="c" onclick="toggleSelect(this)">
+    <div class="letter">C</div>
+    <div class="content">
+      <h3>Title top · Ship center · Full-width crew panel bottom</h3>
+      <p>"S.S. Barakah" sits at the very top. Ship is the centerpiece. A wide frosted "Crew Access" panel spans the full bottom edge — more breathing room than a strip, less intrusive than a centered card.</p>
+      <div style="margin-top:10px;background:#061826;border-radius:8px;padding:12px;font-family:monospace;font-size:11px;color:#9DD8F7;line-height:1.8;">
+        <div style="text-align:center;color:#F2FBFF;font-weight:bold;font-size:12px;letter-spacing:2px;">S.S. BARAKAH</div>
+        <div style="text-align:center;color:rgba(255,255,255,.3);font-size:10px;margin-top:2px;">⭐ · · ⭐ · ⭐</div>
+        <div style="text-align:center;font-size:20px;margin:6px 0;">⛵</div>
+        <div style="text-align:center;color:rgba(157,216,247,.5);font-size:10px;">〰〰〰〰〰〰〰〰</div>
+        <div style="background:rgba(6,24,38,.8);border-top:1px solid rgba(157,216,247,.15);margin:4px -12px -12px;padding:7px 12px;border-radius:0 0 8px 8px;">
+          <div style="color:#9DD8F7;font-size:9px;font-weight:bold;letter-spacing:2px;text-transform:uppercase;margin-bottom:4px;">Crew Access</div>
+          <div style="display:flex;gap:6px;align-items:center;font-size:10px;">
+            <span style="background:rgba(11,53,88,.8);border:1px solid rgba(157,216,247,.3);border-radius:4px;padding:3px 8px;color:rgba(255,255,255,.4);flex:1;">[Name]</span>
+            <span style="background:rgba(11,53,88,.8);border:1px solid rgba(157,216,247,.3);border-radius:4px;padding:3px 8px;color:rgba(255,255,255,.4);flex:1;">[Password]</span>
+            <span style="background:#9DD8F7;color:#061826;font-weight:bold;border-radius:4px;padding:3px 10px;white-space:nowrap;">Board →</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div>
