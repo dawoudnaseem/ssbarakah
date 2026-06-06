@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState, useCallback } from 'react'
+import { useEffect, useState, useCallback, useRef } from 'react'
 import { supabase } from '@/lib/supabaseClient'
 import { todayString, yesterdayString } from '@/lib/dateUtils'
 import { finalizeDay } from '@/lib/finalization'
@@ -73,17 +73,21 @@ export default function ShipDashboard() {
   const [leaderboard, setLeaderboard] = useState<LeaderboardEntry[]>([])
   const [recentFeed, setRecentFeed] = useState<RecentCompletion[]>([])
   const [loading, setLoading] = useState(true)
+  const hasCheckedYesterdayRef = useRef(false)
 
   const fetchData = useCallback(async () => {
-    // Silently finalize yesterday if it hasn't been finalized yet
-    const yesterday = yesterdayString()
-    const { data: yesterdayResult } = await supabase
-      .from('daily_results')
-      .select('id')
-      .eq('result_date', yesterday)
-      .maybeSingle()
-    if (!yesterdayResult) {
-      try { await finalizeDay(yesterday) } catch { /* silent — background housekeeping */ }
+    // Silently finalize yesterday once per mount
+    if (!hasCheckedYesterdayRef.current) {
+      hasCheckedYesterdayRef.current = true
+      const yesterday = yesterdayString()
+      const { data: yesterdayResult } = await supabase
+        .from('daily_results')
+        .select('id')
+        .eq('result_date', yesterday)
+        .maybeSingle()
+      if (!yesterdayResult) {
+        try { await finalizeDay(yesterday) } catch { /* silent — background housekeeping */ }
+      }
     }
 
     const [
