@@ -110,13 +110,13 @@ describe('finalizeDay badge assignment logic', () => {
     })
 
     it('outcome is sunk when any required task is missed', () => {
-      const missed = 2
+      const missed: number = 2
       const outcome: 'survived' | 'sunk' = missed === 0 ? 'survived' : 'sunk'
       expect(outcome).toBe('sunk')
     })
 
     it('outcome is survived when no required tasks are missed', () => {
-      const missed = 0
+      const missed: number = 0
       const outcome: 'survived' | 'sunk' = missed === 0 ? 'survived' : 'sunk'
       expect(outcome).toBe('survived')
     })
