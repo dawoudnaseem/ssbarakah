@@ -484,121 +484,64 @@ Fields:
 
 ## 8.5 History/Stats Page
 
-Suggested route:
+Route: `/history` (linked from NavBar)
 
-```txt
-/history
-```
-
-Purpose:
-
-Show historical productivity, badge records, team outcomes, and individual progress over time.
+Purpose: Show historical productivity, badge records, team outcomes, and individual progress over time.
 
 This page is part of the MVP.
 
-### Required Stats
+### Layout (approved 2026-06-06)
 
-1. Past ship outcomes
-2. Daily winners
-3. Daily Chud badge history
-4. Individual consistency heatmaps
-5. Total points over time
-6. Longest streaks
-7. Most completed Islamic tasks
+Three sections, top to bottom, on a single scrollable page. No tabs.
 
-### Past Ship Outcomes
+**Section 1 — Fleet Summary**
 
-Show a timeline or list of past days.
+Four stat chips in a 4-column grid:
 
-Each day should display:
+- Days Survived (ice-blue)
+- Current Streak with 🔥 (amber)
+- Days Sunk (red)
+- Survival Rate as percentage (green)
 
-- Date
-- Outcome: Survived or Sunk
-- Completion percentage
-- Number of completed tasks
-- Number of missed tasks
+If no finalized days exist yet, all show `—`.
 
-### Daily Winners
+**Section 2 — Crew All-Time Records**
 
-Show the Chad of each day.
+One card per active teammate, sorted by total all-time points descending.
 
-Fields:
+Each card contains:
 
-- Date
-- Chad name
-- Points earned that day
+- Avatar circle (56px). Top scorer: amber colour. Others: ice-blue.
+- Name (22px bold)
+- Badge pills (13px): `⚓ Chad ×N` amber, `💀 Chud ×N` red. Only shown when count > 0.
+- Total Points and Tasks Done displayed at 36px bold on the right. Top scorer's points are amber; all others ice-blue.
+- Heatmap (20 columns × 3 rows = 60 cells, each 14×14px with 3px gap). Covers the last 60 days, left-to-right oldest to newest.
 
-### Daily Chud Badge History
+Heatmap colour scale (based on `points_earned` from `teammate_daily_stats`):
 
-Show who received the Chud badge each day.
+- No data / 0 pts: near-invisible grey
+- 1–9 pts: dark burnt orange (`#7C3200`)
+- 10–19 pts: dark orange (`#B84A00`)
+- 20–34 pts: vivid orange (`#F97316`)
+- 35+ pts: bright amber/gold (`#FBBF24`)
+- `missed_required_tasks > 0` overrides to red (`rgba(220,38,38,0.5)`) regardless of points
 
-Fields:
+**Section 3 — Daily Log**
 
-- Date
-- Chud name
-- Missed task count
+One card per finalized day (`daily_results` rows), newest first.
 
-Important:
+Each card shows:
+- Outcome icon: ⛵ survived, 🌊 sunk
+- Date (full weekday + month + day + year)
+- Title: "Ship Survived" or "Ship Sank"
+- Chips: `⚓ Chad: [name]` amber, `💀 Chud: [name or None]` red, `N/N crew complete` blue
+- Completion percentage (large faded right-aligned)
 
-If everyone completed their tasks, no Chud should be assigned for that day.
+Empty state if no rows: "No voyages recorded yet."
 
-### Individual Consistency Heatmaps
+### Streak Calculation
 
-Each teammate should have a heatmap showing daily activity.
-
-The heatmap should represent points or task completions.
-
-- More completed tasks or more points = stronger/darker/brighter cell
-- No tasks completed = empty or very faint cell
-- Successful full completion day can have a distinct visual state
-
-Because the user may have difficulty distinguishing some colors, do not rely on color alone. Also use opacity, borders, symbols, or labels where helpful.
-
-### Total Points Over Time
-
-Show a simple chart for each teammate.
-
-Options:
-
-- Line chart
-- Bar chart
-- Simple table for MVP if charting takes too long
-
-Data:
-
-- Date
-- Teammate
-- Points earned
-
-### Longest Streaks
-
-Track the longest streak for each teammate.
-
-A streak means consecutive days where the teammate completed all required tasks.
-
-Display:
-
-- Teammate name
-- Current streak
-- Longest streak
-
-### Most Completed Islamic Tasks
-
-Show which Islamic tasks were completed the most across the team.
-
-Examples:
-
-- Quran reading
-- Seeking ilm
-- Praying at the mosque
-- Morning adhkar
-- Evening adhkar
-
-Display:
-
-- Task name
-- Completion count
-- Teammate breakdown, optional
+Count consecutive `survived` days going backwards from the most recent finalized day. A day with no `daily_results` row (gap) breaks the streak.
 
 ---
 
@@ -1183,43 +1126,28 @@ If they miss at least one required task, their current streak resets to 0.
 
 ## 16. Heatmap Requirements
 
-Each teammate should have a heatmap that shows their consistency over time.
+Each teammate has a heatmap showing their consistency over time.
 
-The heatmap should be visible:
+**Approved design (2026-06-06):**
 
-- On teammate dashboard
-- On history/stats page
+- Grid: 20 columns × 3 rows = 60 cells
+- Each cell = one day, 14×14px, 3px gap
+- Left-to-right, top-to-bottom = oldest to newest (last 60 days)
+- Visible on the `/history` page inside each teammate's crew card
+- Planned for teammate dashboard in Task 14 (not yet implemented)
 
-Each cell represents one day.
+**Colour scale (warm tones, based on `points_earned`):**
 
-Cell intensity can be based on:
+- No data / 0 pts: near-invisible grey (`rgba(255,255,255,0.05)`)
+- 1–9 pts: dark burnt orange (`#7C3200`)
+- 10–19 pts: dark orange (`#B84A00`)
+- 20–34 pts: vivid orange (`#F97316`)
+- 35+ pts: bright amber/gold (`#FBBF24`)
+- `missed_required_tasks > 0`: overrides to red (`rgba(220,38,38,0.5)`) regardless of points
 
-- Points earned that day
-- Number of tasks completed that day
-- Completion percentage that day
+Label above heatmap: `"Last 60 days — darker = low pts · gold = high pts · red = missed required"`
 
-Recommended MVP approach:
-
-Use points earned as the main value.
-
-Intensity levels:
-
-- 0 points: empty/faint
-- Low points: light
-- Medium points: medium
-- High points: strong
-- Very high points: strongest
-
-Accessibility note:
-
-Do not rely on color only. Use tooltips, labels, borders, or intensity differences.
-
-Tooltip should show:
-
-- Date
-- Points earned
-- Tasks completed
-- Whether all required tasks were completed
+Data source: `teammate_daily_stats` table (`points_earned`, `missed_required_tasks`, `stat_date`).
 
 ---
 

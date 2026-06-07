@@ -357,25 +357,39 @@
 
 ## Task 13 — History/Stats Page
 
-### 13.1–13.7
-- [ ] Build `/history` page with: Past Ship Outcomes, Daily Winners, Chud History, Points Over Time, Longest Streaks, Most Completed Islamic Tasks
-- [ ] Components: `DailyResultCard.tsx`, `StatsChart.tsx`
+Design approved 2026-06-06. Spec: `docs/superpowers/specs/2026-06-06-task-13-history-stats-page.md`
 
-### 13.8 Update handoff.md
+Single file: `src/app/history/page.tsx` — three sections:
+
+### 13.1 Fleet Summary
+- [ ] 4-chip grid: Days Survived, Current Streak 🔥, Days Sunk, Survival Rate
+- [ ] Streak = consecutive survived days going backwards from latest finalized day
+
+### 13.2 Crew All-Time Records
+- [ ] One card per active teammate, sorted by total all-time points desc
+- [ ] Large avatar (56px), name (22px), Chad/Chud count pills (13px)
+- [ ] Total Points + Tasks Done at 36px bold; top scorer amber, others ice-blue
+- [ ] 20×3 heatmap (60 cells, 14×14px) — warm colour scale, red = missed required
+
+### 13.3 Daily Log
+- [ ] One card per `daily_results` row, newest first
+- [ ] Outcome icon (⛵/🌊), date, title, Chad/Chud/crew chips, completion %
+- [ ] Empty state: "No voyages recorded yet."
+
+### 13.4 Update handoff.md
 - [ ] Append summary of Task 13 to `handoff.md`
 
 ---
 
-## Task 14 — Heatmaps
+## Task 14 — Heatmap on Teammate Dashboard
 
-### 14.1–14.4
-- [ ] Create `src/components/stats/Heatmap.tsx`
-- [ ] Intensity levels based on `points_earned`
-- [ ] Tooltip on hover (date, points, tasks completed, all-required status)
-- [ ] Personal heatmap on teammate dashboard; all heatmaps on history page
-- [ ] Source data from `teammate_daily_stats` via `calculateHeatmapValues`
+Heatmaps on `/history` are implemented as part of Task 13. Task 14 covers adding the same heatmap to the individual teammate dashboard page.
 
-### 14.5 Update handoff.md
+### 14.1–14.2
+- [ ] Add personal heatmap (20×3, same warm colour scale) to `src/app/teammate/[teammateId]/page.tsx`
+- [ ] Source data from `teammate_daily_stats` for the logged-in teammate only
+
+### 14.3 Update handoff.md
 - [ ] Append summary of Task 14 to `handoff.md`
 
 ---
