@@ -31,13 +31,13 @@ describe('finalizeDay badge assignment logic', () => {
       expect(calculateChad([])).toBeNull()
     })
 
-    it('tiebreaks Chad by first teammate in sorted array (stable)', () => {
+    it('tiebreaks Chad by lowest teammate_id (deterministic)', () => {
       const stats = [
         stat({ teammate_id: 'b', points_earned: 100 }),
         stat({ teammate_id: 'a', points_earned: 100 }),
       ]
-      // The first element with max points wins (no explicit tiebreak in spec)
-      expect(calculateChad(stats)).toBe('b')
+      // Lowest teammate_id wins on equal points
+      expect(calculateChad(stats)).toBe('a')
     })
   })
 

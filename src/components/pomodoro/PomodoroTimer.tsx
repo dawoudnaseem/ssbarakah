@@ -256,15 +256,15 @@ export default function PomodoroTimer() {
       <div className="flex gap-3 justify-center mb-3">
         <button
           onClick={running ? pause : start}
-          className="rounded-lg px-5 py-2 text-sm font-semibold"
-          style={{ background: '#9DD8F7', color: '#061826' }}
+          className="rounded-lg px-5 py-3 text-sm font-semibold"
+          style={{ background: '#9DD8F7', color: '#061826', minHeight: '44px' }}
         >
           {running ? 'Pause' : (endTimeRef.current !== null ? 'Resume' : 'Start')}
         </button>
         <button
           onClick={reset}
-          className="rounded-lg px-5 py-2 text-sm font-semibold"
-          style={{ background: 'rgba(255,255,255,0.08)', color: '#F2FBFF', border: '1px solid rgba(157,216,247,0.2)' }}
+          className="rounded-lg px-5 py-3 text-sm font-semibold"
+          style={{ background: 'rgba(255,255,255,0.08)', color: '#F2FBFF', border: '1px solid rgba(157,216,247,0.2)', minHeight: '44px' }}
         >
           Reset
         </button>
@@ -275,14 +275,14 @@ export default function PomodoroTimer() {
         <div className="flex flex-col items-center gap-2">
           <button
             onClick={skipBreak}
-            className="rounded-lg px-4 py-2 text-sm"
+            className="rounded-lg px-4 py-3 text-sm"
             style={{ background: 'rgba(255,255,255,0.06)', color: 'rgba(157,216,247,0.7)', border: '1px solid rgba(157,216,247,0.15)' }}
           >
             Skip break →
           </button>
           <button
             onClick={() => setShowBreathing(true)}
-            className="rounded-lg px-4 py-2 text-sm"
+            className="rounded-lg px-4 py-3 text-sm"
             style={{ background: 'rgba(34,197,94,0.12)', color: '#22C55E', border: '1px solid rgba(34,197,94,0.25)' }}
           >
             🫁 Breathing Exercise

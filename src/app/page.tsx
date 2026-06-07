@@ -152,7 +152,10 @@ export default function ShipDashboard() {
         missedRequired: required.filter(t => !t.is_completed).length,
       }
     })
-    board.sort((a, b) => b.points - a.points)
+    board.sort((a, b) => {
+      if (b.points !== a.points) return b.points - a.points
+      return a.teammate.id.localeCompare(b.teammate.id)
+    })
     setLeaderboard(board)
 
     const taskMap = new Map(tasks.map(t => [t.id, t.name]))

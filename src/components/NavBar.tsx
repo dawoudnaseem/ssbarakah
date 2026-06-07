@@ -94,7 +94,7 @@ export default function NavBar() {
               <button
                 onClick={() => setShowDropdown(v => !v)}
                 className="flex items-center gap-2 px-3 py-1.5 rounded-lg transition-opacity hover:opacity-80"
-                style={{ background: 'rgba(157,216,247,0.1)', border: '1px solid rgba(157,216,247,0.2)' }}
+                style={{ background: 'rgba(157,216,247,0.1)', border: '1px solid rgba(157,216,247,0.2)', minHeight: '44px' }}
               >
                 <span
                   className="w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold"
@@ -141,7 +141,7 @@ export default function NavBar() {
             <button
               onClick={() => setShowLoginModal(true)}
               className="px-4 py-2 rounded-lg text-sm font-semibold transition-opacity hover:opacity-85"
-              style={{ background: '#9DD8F7', color: '#061826', minHeight: '36px' }}
+              style={{ background: '#9DD8F7', color: '#061826', minHeight: '44px' }}
             >
               Board Ship →
             </button>
@@ -149,8 +149,8 @@ export default function NavBar() {
 
           {/* Hamburger — mobile only */}
           <button
-            className="sm:hidden ml-1 p-2 rounded-lg transition-opacity hover:opacity-70"
-            style={{ color: '#9DD8F7' }}
+            className="sm:hidden ml-1 rounded-lg transition-opacity hover:opacity-70"
+            style={{ color: '#9DD8F7', minHeight: '44px', minWidth: '44px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
             onClick={() => setShowDrawer(v => !v)}
             aria-label="Menu"
           >

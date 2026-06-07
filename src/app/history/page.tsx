@@ -145,7 +145,7 @@ export default function HistoryPage() {
         <p style={{ fontSize: '11px', fontWeight: 700, color: 'rgba(157,216,247,0.45)', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: '12px' }}>
           Fleet Summary
         </p>
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '10px' }}>
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
           {chips.map(chip => (
             <div key={chip.label} style={{ background: 'rgba(157,216,247,0.05)', border: '1px solid rgba(157,216,247,0.12)', borderRadius: '12px', padding: '16px', textAlign: 'center' }}>
               <div style={{ fontSize: '32px', fontWeight: 800, color: chip.color, lineHeight: 1 }}>{chip.value}</div>
@@ -182,7 +182,7 @@ export default function HistoryPage() {
             return (
               <div key={rec.teammate.id} style={{ background: 'rgba(11,53,88,0.5)', border: '1px solid rgba(157,216,247,0.1)', borderRadius: '14px', padding: '22px 24px' }}>
                 {/* Header row */}
-                <div style={{ display: 'flex', alignItems: 'center', gap: '18px', marginBottom: '18px' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '18px', marginBottom: '18px', flexWrap: 'wrap' }}>
                   {/* Avatar */}
                   <div style={{ width: '56px', height: '56px', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 800, fontSize: '22px', flexShrink: 0, ...avatarStyle }}>
                     {(rec.teammate.name[0] ?? '?').toUpperCase()}

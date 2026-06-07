@@ -13,7 +13,10 @@ export function calculateDailyPoints(completions: TaskCompletion[]): number {
 
 export function calculateChad(stats: TeammateDailyStat[]): string | null {
   if (stats.length === 0) return null
-  return [...stats].sort((a, b) => b.points_earned - a.points_earned)[0].teammate_id
+  return [...stats].sort((a, b) => {
+    if (b.points_earned !== a.points_earned) return b.points_earned - a.points_earned
+    return a.teammate_id.localeCompare(b.teammate_id)
+  })[0].teammate_id
 }
 
 export function calculateChud(stats: TeammateDailyStat[]): string | null {

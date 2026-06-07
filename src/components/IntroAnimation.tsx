@@ -63,18 +63,24 @@ export default function IntroAnimation({ onDone }: { onDone: () => void }) {
   const audioRef = useRef<HTMLAudioElement>(null)
   const doneRef = useRef(false)
   const audioUnlockedRef = useRef(false)
+  const audioUnlockPendingRef = useRef(false)
 
   // Browsers block autoplay until a user gesture. Touch/click anywhere on the
   // overlay to silently play+pause, which marks the audio element as unlocked.
+  // IMPORTANT: only set audioUnlockedRef inside .then() — not before play() resolves.
+  // Setting it early blocks the gesture-based retry when Chrome rejects the mount-time call.
   function unlockAudio() {
-    if (audioUnlockedRef.current || !audioRef.current) return
-    audioUnlockedRef.current = true
+    if (audioUnlockedRef.current || audioUnlockPendingRef.current || !audioRef.current) return
+    audioUnlockPendingRef.current = true
     audioRef.current.muted = true
     audioRef.current.play().then(() => {
+      audioUnlockedRef.current = true
       audioRef.current!.pause()
       audioRef.current!.currentTime = 0
       audioRef.current!.muted = false
-    }).catch(() => {})
+    }).catch(() => {
+      audioUnlockPendingRef.current = false // allow retry on next gesture
+    })
   }
 
   function clearAllTimeouts() {
