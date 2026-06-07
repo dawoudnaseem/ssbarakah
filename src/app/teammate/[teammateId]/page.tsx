@@ -411,9 +411,9 @@ export default function TeammatePage({ params }: { params: Promise<{ teammateId:
           style={{ background: 'rgba(11,53,88,0.4)', border: '1px solid rgba(157,216,247,0.1)' }}
         >
           <p className="text-xs font-semibold uppercase tracking-widest mb-3" style={{ color: '#9DD8F7' }}>Activity Heatmap</p>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(20, 14px)', gridTemplateRows: 'repeat(3, 14px)', gap: '3px', width: 'fit-content' }}>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(20, 1fr)', gap: '3px', width: '100%' }}>
             {buildHeatmapCells(teammate?.id ?? '', heatmapStats).map(cell => (
-              <div key={cell.date} style={{ width: '14px', height: '14px', borderRadius: '3px', background: cell.color }} />
+              <div key={cell.date} style={{ aspectRatio: '1', borderRadius: '3px', background: cell.color }} />
             ))}
           </div>
           <p className="mt-2" style={{ fontSize: '10px', color: 'rgba(157,216,247,0.3)' }}>
