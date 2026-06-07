@@ -14,28 +14,33 @@ export default function PomodoroTimer() {
   const [showBreathing, setShowBreathing] = useState(false)
 
   const endTimeRef = useRef<number | null>(null)
-  const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null)
+  const modeRef = useRef<'focus' | 'break'>('focus')
+  const focusMinsRef = useRef(DEFAULT_FOCUS)
+  const breakMinsRef = useRef(DEFAULT_BREAK)
 
-  // Tick every second
+  // Keep refs in sync with state so the interval never has stale closures
+  useEffect(() => { modeRef.current = mode }, [mode])
+  useEffect(() => { focusMinsRef.current = focusMins }, [focusMins])
+  useEffect(() => { breakMinsRef.current = breakMins }, [breakMins])
+
+  // Tick every second — deps only on `running` so interval is never recreated mid-session
   useEffect(() => {
     if (!running) return
-    intervalRef.current = setInterval(() => {
-      setSecondsLeft(s => {
-        if (s <= 1) {
-          setMode(prev => {
-            const next = prev === 'focus' ? 'break' : 'focus'
-            const nextSecs = (next === 'focus' ? focusMins : breakMins) * 60
-            endTimeRef.current = Date.now() + nextSecs * 1000
-            return next
-          })
-          setShowBreathing(false)
-          return (mode === 'focus' ? breakMins : focusMins) * 60
-        }
-        return s - 1
-      })
+    const tick = setInterval(() => {
+      if (!endTimeRef.current) return
+      const remaining = Math.max(0, Math.round((endTimeRef.current - Date.now()) / 1000))
+      setSecondsLeft(remaining)
+      if (remaining === 0) {
+        const nextMode = modeRef.current === 'focus' ? 'break' : 'focus'
+        const nextSecs = (nextMode === 'focus' ? focusMinsRef.current : breakMinsRef.current) * 60
+        endTimeRef.current = Date.now() + nextSecs * 1000
+        modeRef.current = nextMode
+        setMode(nextMode)
+        setShowBreathing(false)
+      }
     }, 1000)
-    return () => { if (intervalRef.current) clearInterval(intervalRef.current) }
-  }, [running, mode, focusMins, breakMins])
+    return () => clearInterval(tick)
+  }, [running])
 
   // visibilitychange drift correction
   useEffect(() => {
@@ -60,7 +65,7 @@ export default function PomodoroTimer() {
   function reset() {
     setRunning(false)
     setShowBreathing(false)
-    if (intervalRef.current) clearInterval(intervalRef.current)
+    modeRef.current = 'focus'
     setMode('focus')
     setFocusMins(DEFAULT_FOCUS)
     setBreakMins(DEFAULT_BREAK)
