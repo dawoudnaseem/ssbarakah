@@ -404,8 +404,8 @@ export default function TeammatePage({ params }: { params: Promise<{ teammateId:
             </div>
             <button
               onClick={handleLogout}
-              className="text-xs px-3 py-2 rounded-lg transition-opacity hover:opacity-70"
-              style={{ background: 'rgba(157,216,247,0.1)', border: '1px solid rgba(157,216,247,0.2)', color: '#9DD8F7' }}
+              className="text-xs px-3 py-3 rounded-lg transition-opacity hover:opacity-70"
+              style={{ background: 'rgba(157,216,247,0.1)', border: '1px solid rgba(157,216,247,0.2)', color: '#9DD8F7', minHeight: '44px' }}
             >
               Log out
             </button>
