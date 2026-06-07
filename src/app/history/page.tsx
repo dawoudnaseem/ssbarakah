@@ -30,6 +30,30 @@ function calcSurvivalRate(results: DailyResult[]): string {
   return Math.round((survived / results.length) * 100) + '%'
 }
 
+interface CrewRecord {
+  teammate: Teammate
+  totalPoints: number
+  totalCompletions: number
+  chadCount: number
+  chudCount: number
+}
+
+function buildCrewRecords(
+  teammates: Teammate[],
+  stats: TeammateDailyStat[],
+  completionCounts: Record<string, number>
+): CrewRecord[] {
+  return teammates
+    .map(tm => ({
+      teammate: tm,
+      totalPoints: stats.filter(s => s.teammate_id === tm.id).reduce((sum, s) => sum + s.points_earned, 0),
+      totalCompletions: completionCounts[tm.id] ?? 0,
+      chadCount: stats.filter(s => s.teammate_id === tm.id && s.is_chad).length,
+      chudCount: stats.filter(s => s.teammate_id === tm.id && s.is_chud).length,
+    }))
+    .sort((a, b) => b.totalPoints - a.totalPoints)
+}
+
 export default function HistoryPage() {
   const [data, setData] = useState<HistoryData | null>(null)
   const [loading, setLoading] = useState(true)
@@ -101,6 +125,74 @@ export default function HistoryPage() {
     )
   }
 
+  function renderCrewRecords() {
+    const { teammates, stats, completionCounts } = data!
+    const activeTeammates = teammates.filter(t => t.is_active)
+    const records = buildCrewRecords(activeTeammates, stats, completionCounts)
+
+    if (records.length === 0) return (
+      <div style={{ marginBottom: '32px' }}>
+        <p style={{ fontSize: '11px', fontWeight: 700, color: 'rgba(157,216,247,0.45)', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: '12px' }}>Crew All-Time Records</p>
+        <p style={{ color: 'rgba(157,216,247,0.35)', fontSize: '13px' }}>No crew data yet.</p>
+      </div>
+    )
+
+    return (
+      <div style={{ marginBottom: '32px' }}>
+        <p style={{ fontSize: '11px', fontWeight: 700, color: 'rgba(157,216,247,0.45)', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: '12px' }}>Crew All-Time Records</p>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+          {records.map((rec, idx) => {
+            const isTop = idx === 0
+            const avatarStyle: React.CSSProperties = isTop
+              ? { background: 'rgba(245,158,11,0.2)', border: '2px solid rgba(245,158,11,0.5)', color: '#F59E0B' }
+              : { background: 'rgba(157,216,247,0.15)', border: '2px solid rgba(157,216,247,0.25)', color: '#9DD8F7' }
+            const pointsColor = isTop ? '#F59E0B' : '#9DD8F7'
+
+            return (
+              <div key={rec.teammate.id} style={{ background: 'rgba(11,53,88,0.5)', border: '1px solid rgba(157,216,247,0.1)', borderRadius: '14px', padding: '22px 24px' }}>
+                {/* Header row */}
+                <div style={{ display: 'flex', alignItems: 'center', gap: '18px', marginBottom: '18px' }}>
+                  {/* Avatar */}
+                  <div style={{ width: '56px', height: '56px', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 800, fontSize: '22px', flexShrink: 0, ...avatarStyle }}>
+                    {(rec.teammate.name[0] ?? '?').toUpperCase()}
+                  </div>
+                  {/* Name + pills */}
+                  <div>
+                    <div style={{ fontSize: '22px', fontWeight: 800, color: '#F2FBFF' }}>{rec.teammate.name}</div>
+                    <div style={{ display: 'flex', gap: '8px', marginTop: '6px' }}>
+                      {rec.chadCount > 0 && (
+                        <span style={{ fontSize: '13px', padding: '4px 12px', borderRadius: '20px', fontWeight: 600, background: 'rgba(245,158,11,0.15)', color: '#F59E0B' }}>
+                          ⚓ Chad ×{rec.chadCount}
+                        </span>
+                      )}
+                      {rec.chudCount > 0 && (
+                        <span style={{ fontSize: '13px', padding: '4px 12px', borderRadius: '20px', fontWeight: 600, background: 'rgba(220,38,38,0.15)', color: '#DC2626' }}>
+                          💀 Chud ×{rec.chudCount}
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                  {/* Stats */}
+                  <div style={{ display: 'flex', gap: '32px', marginLeft: 'auto', textAlign: 'right' }}>
+                    <div>
+                      <div style={{ fontSize: '36px', fontWeight: 900, color: pointsColor, lineHeight: 1 }}>{rec.totalPoints}</div>
+                      <div style={{ fontSize: '11px', color: 'rgba(157,216,247,0.35)', textTransform: 'uppercase', letterSpacing: '0.05em', marginTop: '4px' }}>Total Points</div>
+                    </div>
+                    <div>
+                      <div style={{ fontSize: '36px', fontWeight: 900, color: '#9DD8F7', lineHeight: 1 }}>{rec.totalCompletions}</div>
+                      <div style={{ fontSize: '11px', color: 'rgba(157,216,247,0.35)', textTransform: 'uppercase', letterSpacing: '0.05em', marginTop: '4px' }}>Tasks Done</div>
+                    </div>
+                  </div>
+                </div>
+                {/* Heatmap placeholder — added in Task 4 */}
+              </div>
+            )
+          })}
+        </div>
+      </div>
+    )
+  }
+
   return (
     <div style={{ minHeight: '100vh', background: '#061826', paddingTop: '80px' }}>
       <div style={{ maxWidth: '860px', margin: '0 auto', padding: '32px 24px' }}>
@@ -112,7 +204,9 @@ export default function HistoryPage() {
         </p>
         {renderFleetSummary()}
         <hr style={{ border: 'none', borderTop: '1px solid rgba(157,216,247,0.08)', margin: '28px 0' }} />
-        {/* More sections coming */}
+        {renderCrewRecords()}
+        <hr style={{ border: 'none', borderTop: '1px solid rgba(157,216,247,0.08)', margin: '28px 0' }} />
+        {/* Daily log coming */}
       </div>
     </div>
   )
