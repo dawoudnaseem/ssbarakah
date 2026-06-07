@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useRef, useState } from 'react'
 import IcyModal from '@/components/IcyModal'
 import IcyErrorModal from '@/components/IcyErrorModal'
 import { finalizeDay } from '@/lib/finalization'
@@ -11,8 +11,11 @@ export default function FinalizeSection() {
   const [running, setRunning] = useState(false)
   const [done, setDone] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const runningRef = useRef(false)
 
   async function handleFinalize() {
+    if (runningRef.current) return
+    runningRef.current = true
     setConfirming(false)
     setRunning(true)
     try {
@@ -23,6 +26,7 @@ export default function FinalizeSection() {
       setError('Finalization failed. Check console.')
     } finally {
       setRunning(false)
+      runningRef.current = false
     }
   }
 
@@ -36,7 +40,7 @@ export default function FinalizeSection() {
             Today&apos;s voyage has ended. Results locked, badges assigned.
           </p>
           <button
-            onClick={() => setDone(false)}
+            onClick={() => { setDone(false); setError(null) }}
             className="self-start px-4 py-2 rounded-lg text-sm"
             style={{ background: 'rgba(157,216,247,0.08)', color: '#9DD8F7', border: '1px solid rgba(157,216,247,0.2)' }}>
             Reset
@@ -84,8 +88,9 @@ export default function FinalizeSection() {
               </button>
               <button
                 onClick={handleFinalize}
+                disabled={running}
                 className="flex-1 py-2 rounded-lg text-sm font-bold"
-                style={{ background: '#DC2626', color: '#fff' }}>
+                style={{ background: running ? 'rgba(220,38,38,0.5)' : '#DC2626', color: '#fff' }}>
                 Confirm
               </button>
             </div>
