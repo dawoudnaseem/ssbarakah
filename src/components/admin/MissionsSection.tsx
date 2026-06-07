@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react'
 import { supabase } from '@/lib/supabaseClient'
 import IcyModal from '@/components/IcyModal'
+import IcyErrorModal from '@/components/IcyErrorModal'
 import type { PresetTask } from '@/types/database'
 
 const inputStyle: React.CSSProperties = {
@@ -25,6 +26,7 @@ export default function MissionsSection() {
   const [toDelete, setToDelete] = useState<PresetTask | null>(null)
   const [form, setForm] = useState(EMPTY_FORM)
   const [adding, setAdding] = useState(false)
+  const [deleteError, setDeleteError] = useState<string | null>(null)
 
   async function fetchTasks() {
     setLoading(true)
@@ -59,9 +61,15 @@ export default function MissionsSection() {
 
   async function confirmDelete() {
     if (!toDelete) return
-    await supabase.from('preset_tasks').delete().eq('id', toDelete.id)
-    setToDelete(null)
-    fetchTasks()
+    try {
+      const { error } = await supabase.from('preset_tasks').delete().eq('id', toDelete.id)
+      if (error) throw error
+      setToDelete(null)
+      fetchTasks()
+    } catch {
+      setToDelete(null)
+      setDeleteError('Could not remove this mission. It may be referenced by existing tasks.')
+    }
   }
 
   async function addTask() {
@@ -179,6 +187,10 @@ export default function MissionsSection() {
           {adding ? 'Adding…' : 'Add →'}
         </button>
       </div>
+
+      {deleteError && (
+        <IcyErrorModal message={deleteError} onDismiss={() => setDeleteError(null)} />
+      )}
 
       {toDelete && (
         <IcyModal onClose={() => setToDelete(null)} accentColor="#DC2626">
