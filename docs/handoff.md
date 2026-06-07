@@ -4,11 +4,9 @@
 
 ---
 
-## ⏭️ Next Task: Task 16 — Ship Animations & Visual Polish
+## ⏭️ Next Task: Task 18 — Final QA & MVP Verification
 
-See `docs/todo.md` under "Task 16". This is a high-complexity task — decompose into sub-tasks during brainstorming.
-
-**Before starting:** Run the brainstorming skill. Break into independent sub-tasks (intro animation, sinking, overlays, sound).
+See `docs/todo.md` under "Task 18". This is a checklist run through all Definition of Done criteria (§28). No new code expected.
 
 ---
 
@@ -16,12 +14,10 @@ See `docs/todo.md` under "Task 16". This is a high-complexity task — decompose
 
 | Task | Complexity | Est. Sessions | Notes |
 |---|---|---|---|
-| 15 — Pomodoro Timer | Low-medium | 1–2 | Pure UI component, no DB. Include `visibilitychange` fix for background tabs. |
-| 16 — Ship Animations & Visual Polish | **High** | 3–4 | Most complex remaining task. Many subcomponents: sinking animation, success overlay, intro crash animation (once per day, skippable), alarm sound. Lots of visual iteration — break into sub-tasks during brainstorming. |
-| 17 — Mobile Responsiveness | Medium | 1–2 | Audit pass across all pages. Many small fixes: 44px tap targets, no horizontal scroll at 320px/375px/390px, ship scene mobile adaptation. |
-| 18 — Final QA & MVP Verification | Low | 1 | Checklist run through all Definition of Done criteria (§28). No new code expected. |
-
-**Flag for Task 16:** Plan carefully during brainstorming. Decompose into independent sub-tasks (intro animation, sinking, overlays, sound) so each can be scoped and reviewed separately without blowing context.
+| ~~15 — Pomodoro Timer~~ | ~~Low-medium~~ | ~~1–2~~ | ✅ Complete |
+| ~~16 — Ship Animations & Visual Polish~~ | ~~High~~ | ~~3–4~~ | ✅ Complete |
+| ~~17 — Mobile Responsiveness~~ | ~~Medium~~ | ~~1–2~~ | ✅ Complete |
+| **18 — Final QA & MVP Verification** | **Low** | **1** | **Current task.** Checklist run through all Definition of Done criteria (§28). No new code expected. |
 
 ---
 
@@ -1102,6 +1098,62 @@ if (!yResult && yTasks && yTasks.length > 0) {
 Deleting a ship log (via the Logs tab) also deletes all `daily_tasks` for that date, so no tasks remain and auto-finalization has nothing to act on — the log stays deleted across all browsers.
 
 ---
+
+---
+
+## Task 17 — Mobile Responsiveness (Plan Written 2026-06-07)
+
+Full implementation plan: `docs/superpowers/plans/2026-06-07-task-17-mobile-responsiveness.md`
+
+### Confirmed bugs (will cause broken layout or horizontal scroll):
+
+| Bug | File | Fix |
+|---|---|---|
+| Admin sidebar `w-48` fixed; `marginLeft: '192px'` inline on main | `AdminSidebar.tsx`, `admin/page.tsx` | Mobile: horizontal tab strip. Desktop: keep fixed sidebar. Replace hardcoded margin with `sm:ml-48`. |
+| Login ship SVG fixed `width="340"` overflows 288px at 320px | `login/page.tsx` | Wrap in `style={{ width: 'min(340px, 85vw)' }}` container; SVG becomes `width="100%" height="auto"` |
+| History heatmap `repeat(20, 14px)` = 337px overflows crew cards | `history/page.tsx` | Switch to `repeat(20, 1fr)` + `aspectRatio: 1` cells (matches teammate dashboard) |
+
+### Touch target gap:
+- Log out button on teammate dashboard: `py-2` (≈32px) → `py-3 min-h-[44px]` in `teammate/[teammateId]/page.tsx`
+
+### Already OK (no changes needed):
+- NavBar hamburger: works on mobile ✓
+- Ship dashboard scene: `min(520px, 92vw)` ✓
+- Worker positions: % relative to SVG container ✓
+- TaskRow delete/complete buttons: `minHeight: 44px, minWidth: 44px` ✓
+- Pomodoro `visibilitychange` fix: done in Task 15 ✓
+- Intro animation: `overflow: hidden` on fixed container — no scroll bleed ✓
+- Teammate dashboard heatmap: `repeat(20, 1fr)` already responsive ✓
+
+---
+
+## ✅ Task 17 — Mobile Responsiveness (2026-06-07)
+
+**Plan:** `docs/superpowers/plans/2026-06-07-task-17-mobile-responsiveness.md`
+
+### Fixes implemented
+
+**Task A — Admin dashboard mobile layout**
+- `src/components/admin/AdminSidebar.tsx` — rewrote to dual layout: `sm:hidden` sticky horizontal scroll tab strip (mobile) + `hidden sm:flex` fixed vertical sidebar (desktop). All buttons `minHeight: 44px`. Mobile strip uses `z-40`, `overflow-x-auto`, `flex-shrink-0` on items.
+- `src/app/admin/page.tsx` — outer wrapper changed to `flex-col`; `<main>` style changed from hardcoded `marginLeft: '192px'` to Tailwind `sm:ml-48 p-4 sm:p-6`.
+
+**Task B — Login page ship SVG**
+- `src/app/login/page.tsx` — added `width: 'min(340px, 85vw)'` to the `animate-bob` wrapper div; changed `<svg>` from fixed `width="340" height="170"` to fluid `style={{ width: '100%', height: 'auto', display: 'block' }}`. At 320px viewport the ship shrinks to 272px (fits within 288px available).
+
+**Task C — History heatmap**
+- `src/app/history/page.tsx` — heatmap grid switched from fixed `gridTemplateColumns: 'repeat(20, 14px)'` + fixed `14×14px` cells to `repeat(20, 1fr)` + `width: '100%'` + `aspectRatio: 1` cells. Matches the teammate dashboard heatmap pattern exactly.
+
+**Task D — Touch target**
+- `src/app/teammate/[teammateId]/page.tsx` — Log out button: `py-2` → `py-3`, added `minHeight: '44px'` to inline style.
+
+### Verification
+- `npx tsc --noEmit`: clean ✅
+- `npm test`: 60/60 passing ✅
+- No remaining `fit-content` grid patterns in `src/` ✅
+- No remaining hardcoded `marginLeft: 192px` ✅
+
+### Known pre-existing issue (not introduced by Task 17)
+The login page ship's `animate-bob` CSS keyframe applies its own `transform` at animation time, which overrides the `rotate(5deg)` inline style on the same element. The 5-degree tilt was silently not rendering before Task 17. This is outside Task 17 scope; flag for a visual polish pass if desired.
 
 ### Behaviour when tab was closed during sinking
 

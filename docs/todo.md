@@ -462,15 +462,33 @@ Heatmaps on `/history` are implemented as part of Task 13. Task 14 covers adding
 
 ## Task 17 — Mobile Responsiveness
 
-### 17.1–17.5
-- [ ] Mobile-first layout pass on all pages
-- [ ] Ship scene mobile adaptation (container-relative worker positions)
-- [ ] Pomodoro background timer fix (visibilitychange)
-- [ ] Touch interaction audit (44px tap targets, no hover-only states)
-- [ ] No horizontal scroll at 320px / 375px / 390px
+Plan: `docs/superpowers/plans/2026-06-07-task-17-mobile-responsiveness.md`
+
+### 17.A — Admin dashboard mobile layout
+- [x] Rewrite `src/components/admin/AdminSidebar.tsx` — mobile horizontal tab strip + desktop fixed sidebar unchanged
+- [x] Fix `src/app/admin/page.tsx` — replace hardcoded `marginLeft: '192px'` with `sm:ml-48` responsive class
+- [x] Verify admin at 320px: tab strip visible, content full width, no sidebar visible
+
+### 17.B — Login page ship SVG responsive sizing
+- [x] Wrap ship `<svg>` in a `style={{ width: 'min(340px, 85vw)' }}` container; change `<svg>` to use `viewBox` + `width="100%"` `height="auto"`
+- [x] Verify login at 320px: no horizontal scroll, ship proportional
+
+### 17.C — History page heatmap overflow fix
+- [x] Change heatmap grid from `repeat(20, 14px)` → `repeat(20, 1fr)`, cells from `width/height: 14px` → `aspectRatio: 1`
+- [x] Verify history at 320px: heatmap fits in card, no overflow
+
+### 17.D — Touch target fixes
+- [x] Log out button on teammate dashboard: `py-2` → `py-3 min-h-[44px]` (admin sidebar buttons fixed in 17.A)
+
+### 17.E — No horizontal scroll verification
+- [x] Login / Ship dashboard / Teammate dashboard / History / Admin — all at 320px, 375px, 390px, 768px
+- [x] Fix any newly discovered overflow (document in handoff.md)
+- [x] Run `npm test` — 60 tests passing
 
 ### 17.6 Update handoff.md
-- [ ] Append summary of Task 17 to `handoff.md`
+- [x] Append summary of Task 17 to `handoff.md`
+- [x] Mark next task as Task 18 in handoff.md header
+- [x] Push to GitHub
 
 ---
 
