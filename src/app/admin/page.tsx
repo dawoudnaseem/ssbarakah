@@ -7,6 +7,7 @@ import AdminSidebar from '@/components/admin/AdminSidebar'
 import StatusSection from '@/components/admin/StatusSection'
 import CrewSection from '@/components/admin/CrewSection'
 import MissionsSection from '@/components/admin/MissionsSection'
+import FinalizeSection from '@/components/admin/FinalizeSection'
 
 type AdminSection = 'status' | 'crew' | 'missions' | 'finalize'
 
@@ -149,7 +150,7 @@ export default function AdminPage() {
         {section === 'status' && <StatusSection />}
         {section === 'crew' && <CrewSection />}
         {section === 'missions' && <MissionsSection />}
-        {section === 'finalize' && <div style={{ color: '#9DD8F7' }}>Finalize — coming in Task 8</div>}
+        {section === 'finalize' && <FinalizeSection />}
       </main>
     </div>
   )
