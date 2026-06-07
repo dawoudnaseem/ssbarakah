@@ -26,7 +26,7 @@ export default function AdminSidebar({
     <>
       {/* ── Mobile: horizontal scroll tab strip ── */}
       <div
-        className="sm:hidden sticky top-14 z-30 flex items-center gap-1 px-2 py-2 overflow-x-auto"
+        className="sm:hidden sticky top-14 z-40 flex items-center gap-1 px-2 py-2 overflow-x-auto"
         style={{ background: '#0a1e2e', borderBottom: '1px solid rgba(157,216,247,0.1)' }}
       >
         {NAV_ITEMS.map(item => {
@@ -57,7 +57,7 @@ export default function AdminSidebar({
           className="flex-shrink-0 px-3 rounded-lg text-xs"
           style={{ minHeight: '44px', color: 'rgba(157,216,247,0.35)' }}
         >
-          ← Out
+          ← Log Out
         </button>
       </div>
 
