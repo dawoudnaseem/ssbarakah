@@ -20,7 +20,7 @@ function calcStreak(results: DailyResult[]): number {
     // Check for date gap: expected date is today minus i days
     const expected = new Date()
     expected.setDate(expected.getDate() - i)
-    const expectedStr = expected.toISOString().split('T')[0]
+    const expectedStr = localDateStr(expected)
     if (r.result_date !== expectedStr) break  // gap in dates — streak ends
     if (r.outcome === 'survived') {
       streak++
@@ -67,7 +67,7 @@ function buildHeatmapCells(
   for (let i = 59; i >= 0; i--) {
     const d = new Date()
     d.setDate(d.getDate() - i)
-    const dateStr = d.toISOString().split('T')[0]
+    const dateStr = localDateStr(d)
     const stat = byDate[dateStr]
     cells.push({
       date: dateStr,
@@ -77,6 +77,10 @@ function buildHeatmapCells(
     })
   }
   return cells
+}
+
+function localDateStr(d: Date): string {
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
 }
 
 function formatDate(dateStr: string): string {
@@ -107,22 +111,29 @@ function buildCrewRecords(
 export default function HistoryPage() {
   const [data, setData] = useState<HistoryData | null>(null)
   const [loading, setLoading] = useState(true)
+  const [fetchError, setFetchError] = useState<string | null>(null)
 
   useEffect(() => { fetchHistory() }, [])
 
   async function fetchHistory() {
     setLoading(true)
     const [
-      { data: results },
-      { data: stats },
-      { data: teammates },
-      { data: completions },
+      { data: results, error: e1 },
+      { data: stats, error: e2 },
+      { data: teammates, error: e3 },
+      { data: completions, error: e4 },
     ] = await Promise.all([
       supabase.from('daily_results').select('*').order('result_date', { ascending: false }),
       supabase.from('teammate_daily_stats').select('*'),
       supabase.from('teammates').select('*').order('name'),
       supabase.from('task_completions').select('teammate_id'),
     ])
+
+    if (e1 || e2 || e3 || e4) {
+      setFetchError('Failed to load history. Please refresh.')
+      setLoading(false)
+      return
+    }
 
     const counts: Record<string, number> = {}
     for (const c of (completions ?? [])) {
@@ -138,14 +149,21 @@ export default function HistoryPage() {
     setLoading(false)
   }
 
+  if (fetchError) return (
+    <div style={{ minHeight: '100vh', background: '#061826', paddingTop: '80px' }}>
+      <p style={{ color: '#DC2626', textAlign: 'center', paddingTop: '60px' }}>{fetchError}</p>
+    </div>
+  )
+
   if (loading) return (
     <div style={{ minHeight: '100vh', background: '#061826', paddingTop: '80px' }}>
       <p style={{ color: '#9DD8F7', textAlign: 'center', paddingTop: '60px' }}>Loading voyage records…</p>
     </div>
   )
 
+  const { results, stats, teammates, completionCounts } = data!
+
   function renderFleetSummary() {
-    const { results } = data!
     const survived = results.filter(r => r.outcome === 'survived').length
     const sunk = results.filter(r => r.outcome === 'sunk').length
     const streak = calcStreak(results)
@@ -176,7 +194,6 @@ export default function HistoryPage() {
   }
 
   function renderCrewRecords() {
-    const { teammates, stats, completionCounts } = data!
     const activeTeammates = teammates.filter(t => t.is_active)
     const records = buildCrewRecords(activeTeammates, stats, completionCounts)
 
@@ -240,7 +257,7 @@ export default function HistoryPage() {
                     Last 60 days — darker = low pts · gold = high pts · red = missed required
                   </p>
                   <div style={{ display: 'grid', gridTemplateColumns: 'repeat(20, 14px)', gridTemplateRows: 'repeat(3, 14px)', gap: '3px', width: 'fit-content' }}>
-                    {buildHeatmapCells(rec.teammate.id, data!.stats).map(cell => (
+                    {buildHeatmapCells(rec.teammate.id, stats).map(cell => (
                       <div key={cell.date} style={{ width: '14px', height: '14px', borderRadius: '3px', background: cell.color }} />
                     ))}
                   </div>
@@ -254,7 +271,6 @@ export default function HistoryPage() {
   }
 
   function renderDailyLog() {
-    const { results, teammates } = data!
     // All teammates (including inactive) so old log entries with inactive Chad/Chud still resolve
     const tmById: Record<string, string> = {}
     for (const tm of teammates) tmById[tm.id] = tm.name
