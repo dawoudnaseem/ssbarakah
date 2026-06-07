@@ -53,9 +53,9 @@ const PHASE_TIMINGS: { at: number; phase: number }[] = [
   { at: 12700, phase: 5 },
   { at: 13700, phase: 6 },
   { at: 15700, phase: 7 },
-  { at: 19000, phase: 8 },
+  { at: 17200, phase: 8 },
 ]
-const COMPLETE_AT = 21000
+const COMPLETE_AT = 19200
 
 export default function IntroAnimation({ onDone }: { onDone: () => void }) {
   const [phase, setPhase] = useState(0)
@@ -157,7 +157,7 @@ export default function IntroAnimation({ onDone }: { onDone: () => void }) {
         inset: 0,
         zIndex: 200,
         overflow: 'hidden',
-        background: 'linear-gradient(180deg, #020810 0%, #061826 40%, #0B3558 100%)',
+        background: 'linear-gradient(180deg, #061826 0%, #0B3558 100%)',
       }}
     >
       {/* Alarm audio — not visible */}
@@ -181,10 +181,16 @@ export default function IntroAnimation({ onDone }: { onDone: () => void }) {
         ))}
       </div>
 
-      {/* Ocean — dark wave strip at bottom ~30% */}
+      {/* Back wave — same as main page */}
       <div
         className="absolute bottom-0 left-0 right-0 pointer-events-none wave-back"
-        style={{ height: '30%', zIndex: 1, background: '#041220' }}
+        style={{ height: '44%', zIndex: 1 }}
+        aria-hidden="true"
+      />
+      {/* Front wave — same as main page, renders over back wave and ship hull */}
+      <div
+        className="absolute bottom-0 left-0 right-0 pointer-events-none wave-front"
+        style={{ height: '40%', zIndex: 3 }}
         aria-hidden="true"
       />
 
@@ -209,7 +215,7 @@ export default function IntroAnimation({ onDone }: { onDone: () => void }) {
         style={{
           bottom: '24%',
           right: '2%',
-          zIndex: 4,
+          zIndex: 2,
           transform: icebergTransform,
           transition: phase >= 5 ? 'transform 0.5s ease-in' : undefined,
         }}
@@ -231,7 +237,7 @@ export default function IntroAnimation({ onDone }: { onDone: () => void }) {
           left: '50%',
           bottom: '24%',
           marginLeft: 'calc(min(75vw, 560px) / -2)',
-          zIndex: 3,
+          zIndex: 2,
           transform: shipTransform,
           transition: phase >= 1 ? 'transform 2s ease-out' : undefined,
         }}
@@ -325,14 +331,14 @@ export default function IntroAnimation({ onDone }: { onDone: () => void }) {
 
             {/* Araf — top-left of deck */}
             {phase === 2 && (
-              <Bubble style={{ bottom: '72%', left: '20%' }}>
+              <Bubble name="Araf" style={{ bottom: '72%', left: '20%' }}>
                 Yo, word on the street is there&apos;s an iceberg in front of us.
               </Bubble>
             )}
 
             {/* Dawoud — top-right */}
             {phase === 3 && (
-              <Bubble style={{ bottom: '72%', right: '15%' }}>
+              <Bubble name="Dawoud" style={{ bottom: '72%', right: '15%' }}>
                 Wdym bro?
               </Bubble>
             )}
@@ -340,6 +346,7 @@ export default function IntroAnimation({ onDone }: { onDone: () => void }) {
             {/* Everyone — centered, panic */}
             {phase === 4 && (
               <Bubble
+                name="Everyone"
                 panic
                 style={{ bottom: '78%', left: '50%', transform: 'translateX(-50%)' }}
               >
@@ -379,10 +386,12 @@ function Bubble({
   children,
   style,
   panic = false,
+  name,
 }: {
   children: React.ReactNode
   style?: React.CSSProperties
   panic?: boolean
+  name?: string
 }) {
   return (
     <div
@@ -406,6 +415,18 @@ function Bubble({
         ...style,
       }}
     >
+      {name && (
+        <div style={{
+          fontSize: '10px',
+          fontWeight: 700,
+          opacity: 0.6,
+          marginBottom: '4px',
+          letterSpacing: '0.05em',
+          textTransform: 'uppercase',
+        }}>
+          {name}
+        </div>
+      )}
       {children}
       {/* Arrow */}
       <span
