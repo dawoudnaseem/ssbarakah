@@ -965,14 +965,22 @@ Original implementation used a `useState` lazy initializer to read `localStorage
 | Phase | Timing | Event |
 |-------|--------|-------|
 | 1 | 400ms | Ship sails in from left |
-| 2 | 3500ms | Araf dialog bubble |
-| 3 | 6000ms | Dawoud dialog bubble |
-| 4 | 8200ms | Everyone dialog bubble |
-| 5 | 10000ms | Iceberg slams in from right |
-| 6 | 11000ms | Screen shake + alarm + crack draws |
-| 7 | 13000ms | Alarm fades, ship tilts, workers panic |
-| 8 | 16000ms | Scene fades to black |
-| done | 18000ms | `onDone()` called |
+| 2 | 3500ms | Araf bubble: "Yo, word on the street..." |
+| 3 | 6000ms | Dawoud bubble: "Wdym bro?" |
+| 4 | 8200ms | Everyone bubble: "AHHHHHHHHHHH" — red alarm lights + `alarm1.mp3` starts |
+| 5 | 12700ms | Iceberg slams in (~4.5s of alarm before crash) |
+| 6 | 13700ms | Screen shake + crack draws; audio paused (first ~4.5s of clip used) |
+| 7 | 15700ms | Red fades, ship tilts −20°, workers appear & panic |
+| 8 | 17200ms | Scene fades to black (1.5s after tilt — was 3.3s, trimmed per UX feedback) |
+| done | 19200ms | `onDone()` called |
+
+**Post-completion changes (2026-06-07):**
+- **alarm1.mp3**: replaced silent `alarm.mp3` placeholder with `public/sounds/alarm1.mp3` (13s clip). Only the first ~4.5s is used — audio starts at phase 4 and is paused at phase 6 (the crash). Chrome blocks autoplay without a user gesture; audio is unlocked via `mousedown`/`touchstart`/`keydown`/`pointerdown` document listeners registered on mount. Works on Safari; Chrome requires user to interact before phase 4.
+- **Alarm timing moved to phase 4**: alarm + red overlay now start when "AHHHHHHHHHHH" appears, not at the crash. Red overlay pulses through phases 4–6, then fades at phase 7.
+- **Background matched to main page**: gradient changed from 3-stop (`#020810 → #061826 → #0B3558`) to the same 2-stop as the ship scene (`#061826 → #0B3558`).
+- **Animated waves added**: replaced static `#041220` ocean strip with the same `wave-back` (44% height, z:1) and `wave-front` (40% height, z:3) animated layers from the main page. Ship and iceberg sit at z:2 — between the two wave layers — so the front wave partially submerges their hulls.
+- **Speaker names on bubbles**: each dialog bubble now shows the speaker's name (Araf / Dawoud / Everyone) as a small uppercase label above the message text.
+- **Faster ending**: phase 8 (fade out) moved from 19000ms → 17200ms, trimming the tilted-ship hold from 3.3s to 1.5s.
 
 ### Final z-index Stack (page.tsx dashboard)
 
@@ -986,5 +994,18 @@ Original implementation used a `useState` lazy initializer to read `localStorage
 | 49 | Success banner |
 | 40 | Mission status chip + countdown |
 
-### ⚠️ alarm.mp3 placeholder
-`public/sounds/alarm.mp3` is a silent placeholder. Replace with a real clip before using the intro animation in production.
+### IntroAnimation internal z-index layering
+
+| z-index | Element |
+|---------|---------|
+| 100 | Skip button |
+| 50 | Red alarm overlay |
+| 6 | Dialog bubbles |
+| 5 | Iceberg |
+| 4 | Ship |
+| 3 | Front wave (`wave-front`) |
+| 2 | (ship + iceberg sit here — between waves) |
+| 1 | Back wave (`wave-back`) |
+
+### ⚠️ alarm sound
+`public/sounds/alarm1.mp3` is the active alarm clip (13s). Only the first ~4.5s plays. Chrome autoplay policy requires a user gesture before phase 4 (8.2s) — the animation registers document-level listeners to unlock on first interaction. If Chrome support is critical, consider a short looping clip triggered on a user-visible "tap to start" prompt.
