@@ -59,14 +59,22 @@ export default function TeammatePage({ params }: { params: Promise<{ teammateId:
 
   const today = todayString()
 
-  // ── Auth guard ──────────────────────────────────────────────────────────────
+  // ── Auth guard + fresh badge fetch ─────────────────────────────────────────
   useEffect(() => {
     const current = getCurrentTeammate()
     if (!current) {
       router.replace('/login')
       return
     }
+    // Set from localStorage immediately so the page renders, then fetch fresh
+    // data from DB so current_chad/current_chud reflect the latest finalization.
     setTeammate(current)
+    supabase
+      .from('teammates')
+      .select('*')
+      .eq('id', current.id)
+      .single()
+      .then(({ data }) => { if (data) setTeammate(data as Teammate) })
   }, [router])
 
   // ── Fetch tasks + streak ────────────────────────────────────────────────────
@@ -118,6 +126,21 @@ export default function TeammatePage({ params }: { params: Promise<{ teammateId:
     if (!teammate) return
     Promise.all([fetchTasks(), fetchStreak(), fetchPresets()]).then(() => setLoading(false))
   }, [teammate, fetchTasks, fetchStreak, fetchPresets])
+
+  // ── Watch for day finalization → redirect to ship page for the animation ────
+  useEffect(() => {
+    if (!teammate) return
+    async function checkFinalized() {
+      const { data } = await supabase
+        .from('daily_results')
+        .select('id')
+        .eq('result_date', today)
+        .maybeSingle()
+      if (data) router.replace('/')
+    }
+    const id = setInterval(checkFinalized, 10_000)
+    return () => clearInterval(id)
+  }, [teammate, today, router])
 
   // ── Ensure recurring tasks exist for today ──────────────────────────────────
   useEffect(() => {

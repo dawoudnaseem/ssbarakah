@@ -1,17 +1,30 @@
 'use client'
 
-import { useRef, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
+import { useRouter } from 'next/navigation'
 import IcyModal from '@/components/IcyModal'
 import IcyErrorModal from '@/components/IcyErrorModal'
 import { finalizeDay } from '@/lib/finalization'
 import { todayString } from '@/lib/dateUtils'
+import { supabase } from '@/lib/supabaseClient'
 
 export default function FinalizeSection() {
+  const router = useRouter()
   const [confirming, setConfirming] = useState(false)
   const [running, setRunning] = useState(false)
   const [done, setDone] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [alreadyFinalized, setAlreadyFinalized] = useState(false)
   const runningRef = useRef(false)
+
+  useEffect(() => {
+    supabase
+      .from('daily_results')
+      .select('id')
+      .eq('result_date', todayString())
+      .maybeSingle()
+      .then(({ data }) => setAlreadyFinalized(!!data))
+  }, [done])
 
   async function handleFinalize() {
     if (runningRef.current) return
@@ -19,8 +32,13 @@ export default function FinalizeSection() {
     setConfirming(false)
     setRunning(true)
     try {
-      await finalizeDay(todayString())
+      const dateStr = todayString()
+      await finalizeDay(dateStr)
+      // Clear dismissed flags so the overlay/banner always show fresh after finalization
+      sessionStorage.removeItem(`ss_barakah_sunk_dismissed_${dateStr}`)
+      sessionStorage.removeItem(`ss_barakah_survived_dismissed_${dateStr}`)
       setDone(true)
+      router.replace('/')
     } catch (err) {
       console.error(err)
       setError('Finalization failed. Check console.')
@@ -53,6 +71,18 @@ export default function FinalizeSection() {
   return (
     <div>
       <h2 className="text-lg font-bold mb-4" style={{ color: '#F2FBFF' }}>End Today&apos;s Voyage</h2>
+
+      {alreadyFinalized && (
+        <div className="rounded-xl px-5 py-4 mb-4 flex flex-col gap-1"
+          style={{ background: 'rgba(245,158,11,0.08)', border: '1px solid rgba(245,158,11,0.3)' }}>
+          <p className="text-sm font-semibold" style={{ color: '#F59E0B' }}>
+            ⚠ Today&apos;s voyage is already finalized.
+          </p>
+          <p className="text-xs" style={{ color: 'rgba(245,158,11,0.7)' }}>
+            To re-run finalization (e.g. for testing), go to the <strong>Ship Logs</strong> tab and delete today&apos;s entry first.
+          </p>
+        </div>
+      )}
 
       <div className="rounded-xl p-5 flex flex-col gap-4"
         style={{ background: 'rgba(157,216,247,0.04)', border: '1px solid rgba(157,216,247,0.1)' }}>

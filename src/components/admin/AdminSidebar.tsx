@@ -1,13 +1,17 @@
 'use client'
 
-type AdminSection = 'status' | 'crew' | 'missions' | 'finalize'
+type AdminSection = 'status' | 'crew' | 'missions' | 'logs' | 'tasks' | 'finalize'
 
 const NAV_ITEMS: { id: AdminSection; label: string; emoji: string }[] = [
-  { id: 'status',   label: 'Status',   emoji: '📊' },
-  { id: 'crew',     label: 'Crew',     emoji: '👥' },
-  { id: 'missions', label: 'Missions', emoji: '📋' },
-  { id: 'finalize', label: 'Finalize', emoji: '⚡' },
+  { id: 'status',   label: 'Status',     emoji: '📊' },
+  { id: 'crew',     label: 'Crew',       emoji: '👥' },
+  { id: 'missions', label: 'Missions',   emoji: '📋' },
+  { id: 'logs',     label: 'Ship Logs',  emoji: '📜' },
+  { id: 'tasks',    label: 'Daily Tasks',emoji: '📝' },
+  { id: 'finalize', label: 'Finalize',   emoji: '⚡' },
 ]
+
+export type { AdminSection }
 
 export default function AdminSidebar({
   active,

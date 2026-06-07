@@ -3,13 +3,13 @@
 import { useState, useEffect } from 'react'
 import { validateAdminCode, setAdminSession, isAdminAuthenticated, clearAdminSession } from '@/lib/auth'
 import IcyErrorModal from '@/components/IcyErrorModal'
-import AdminSidebar from '@/components/admin/AdminSidebar'
+import AdminSidebar, { type AdminSection } from '@/components/admin/AdminSidebar'
 import StatusSection from '@/components/admin/StatusSection'
 import CrewSection from '@/components/admin/CrewSection'
 import MissionsSection from '@/components/admin/MissionsSection'
+import LogsSection from '@/components/admin/LogsSection'
+import DailyTasksSection from '@/components/admin/DailyTasksSection'
 import FinalizeSection from '@/components/admin/FinalizeSection'
-
-type AdminSection = 'status' | 'crew' | 'missions' | 'finalize'
 
 const STARS = [
   { w: '2px', top: '4%',  left: '8%',  op: 0.7  },
@@ -147,9 +147,11 @@ export default function AdminPage() {
     <div className="min-h-screen flex" style={{ background: '#061826', paddingTop: '56px' }}>
       <AdminSidebar active={section} onSelect={setSection} onLogout={handleLogout} />
       <main className="flex-1 p-6 overflow-y-auto" style={{ marginLeft: '192px' }}>
-        {section === 'status' && <StatusSection />}
-        {section === 'crew' && <CrewSection />}
+        {section === 'status'   && <StatusSection />}
+        {section === 'crew'     && <CrewSection />}
         {section === 'missions' && <MissionsSection />}
+        {section === 'logs'     && <LogsSection />}
+        {section === 'tasks'    && <DailyTasksSection />}
         {section === 'finalize' && <FinalizeSection />}
       </main>
     </div>

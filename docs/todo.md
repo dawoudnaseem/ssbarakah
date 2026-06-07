@@ -423,6 +423,43 @@ Heatmaps on `/history` are implemented as part of Task 13. Task 14 covers adding
 
 ---
 
+## ✅ Admin Panel Expansion & UI/UX Fixes (2026-06-07)
+
+### Admin — new tabs
+- [x] Created `src/components/admin/LogsSection.tsx` — ship logs list with delete per entry (wipes tasks + completions + stats + result row)
+- [x] Created `src/components/admin/DailyTasksSection.tsx` — today's tasks for all teammates with edit (name, points, required) and delete (also removes recurring_tasks entry)
+- [x] Exported `AdminSection` type from `AdminSidebar.tsx`; updated `admin/page.tsx` to render new tabs
+
+### Admin — Finalize tab improvements
+- [x] Already-finalized warning on mount (amber banner with hint to delete from Ship Logs)
+- [x] Redirect to `/` after finalization so admin sees the animation
+- [x] Clear sessionStorage dismissed keys before redirect so overlay/banner always show fresh
+
+### Intro animation
+- [x] Restored once-per-day gate (localStorage `ss_barakah_last_intro`); plays on first visit each day, skipped on subsequent loads
+
+### Sinking / success animation reliability
+- [x] Gate sink trigger on `introPlayed` so animation doesn't fire silently behind the intro overlay
+- [x] `prevSunkRef` resets the latch when log is deleted so animation re-fires on next finalization
+- [x] Success banner condition changed from `progress === 100` to `todayResult?.outcome === 'survived'` — only shows after official finalization
+- [x] Fixed dismissed sessionStorage key not cleared between test runs (cleared in both LogsSection and FinalizeSection)
+
+### Teammate dashboard
+- [x] 10-second poll in `/teammate/[id]` detects finalization and redirects to `/` automatically
+- [x] Fresh Supabase fetch on mount for `current_chad`/`current_chud` — no longer stale from localStorage
+
+### Badges
+- [x] Log deletion re-derives and writes Chad/Chud badges from most recent remaining log (or clears all if none)
+
+### Supabase permissions
+- [x] `supabase/migrations/004_disable_rls.sql` — disables RLS + grants DELETE/UPDATE to anon and authenticated roles (run in SQL editor)
+
+### Auto-finalization guard
+- [x] Only auto-finalizes yesterday if `daily_tasks` exist for that date — prevents recreation of deliberately deleted logs
+- [x] Log deletion (LogsSection) also deletes all `daily_tasks` for that date so no tasks remain to trigger auto-finalization
+
+---
+
 ## Task 17 — Mobile Responsiveness
 
 ### 17.1–17.5

@@ -70,8 +70,13 @@ export default function ShipDashboard() {
   const countdown = useCountdown()
 
   // ── Daily intro crash animation ───────────────────────────────────────────
-  // Always play on every page load.
-  const [introPlayed, setIntroPlayed] = useState(false)
+  // Start as true (skip) to avoid SSR mismatch; useEffect sets false if not yet played today.
+  const [introPlayed, setIntroPlayed] = useState(true)
+
+  useEffect(() => {
+    const lastIntro = localStorage.getItem('ss_barakah_last_intro')
+    if (lastIntro !== todayString()) setIntroPlayed(false)
+  }, [])
 
   const [teammates, setTeammates] = useState<Teammate[]>([])
   const [allTasks, setAllTasks] = useState<DailyTask[]>([])
@@ -79,7 +84,7 @@ export default function ShipDashboard() {
   const [leaderboard, setLeaderboard] = useState<LeaderboardEntry[]>([])
   const [recentFeed, setRecentFeed] = useState<RecentCompletion[]>([])
   const [loading, setLoading] = useState(true)
-  const hasCheckedYesterdayRef = useRef(false)
+  const hasAutoFinalizedRef = useRef(false)
 
   // ── Sinking animation state ──────────────────────────────────────────────────
   const [sinkingWorkers, setSinkingWorkers] = useState(false)
@@ -89,17 +94,19 @@ export default function ShipDashboard() {
   const sinkTriggeredRef = useRef(false)
 
   const fetchData = useCallback(async () => {
-    // Silently finalize yesterday once per mount
-    if (!hasCheckedYesterdayRef.current) {
-      hasCheckedYesterdayRef.current = true
+    // Auto-finalize yesterday once per mount, but only if yesterday had tasks.
+    // Checking for tasks prevents recreating logs that were deliberately deleted
+    // (a deleted log for a date that still has tasks will still be recreated — that
+    // is intentional, since the day genuinely happened and needs a result).
+    if (!hasAutoFinalizedRef.current) {
+      hasAutoFinalizedRef.current = true
       const yesterday = yesterdayString()
-      const { data: yesterdayResult } = await supabase
-        .from('daily_results')
-        .select('id')
-        .eq('result_date', yesterday)
-        .maybeSingle()
-      if (!yesterdayResult) {
-        try { await finalizeDay(yesterday) } catch { /* silent — background housekeeping */ }
+      const [{ data: yResult }, { data: yTasks }] = await Promise.all([
+        supabase.from('daily_results').select('id').eq('result_date', yesterday).maybeSingle(),
+        supabase.from('daily_tasks').select('id').eq('task_date', yesterday).limit(1),
+      ])
+      if (!yResult && yTasks && yTasks.length > 0) {
+        try { await finalizeDay(yesterday) } catch { /* silent */ }
       }
     }
 
@@ -183,16 +190,28 @@ export default function ShipDashboard() {
     }
   }, [today])
 
-  // Trigger sinking animation exactly once when todayResult becomes sunk
+  // Trigger sinking animation when todayResult becomes sunk.
+  // Waits for the intro animation to finish first so the sink isn't hidden behind it.
+  // Reset guard whenever the result transitions away from sunk (e.g. log deleted + re-finalized).
+  const prevSunkRef = useRef(false)
   useEffect(() => {
     const isSunk = todayResult?.outcome === 'sunk'
-    if (isSunk && !sinkTriggeredRef.current) {
+    if (!isSunk && prevSunkRef.current) {
+      // Result was cleared — reset so the animation can fire again on the next finalization
+      sinkTriggeredRef.current = false
+      setSinkingWorkers(false)
+      setDeepSunk(false)
+      setFailureOverlayDismissed(false)
+      sessionStorage.removeItem(`ss_barakah_sunk_dismissed_${today}`)
+    }
+    prevSunkRef.current = isSunk
+    if (isSunk && !sinkTriggeredRef.current && introPlayed) {
       sinkTriggeredRef.current = true
       setSinkingWorkers(true)
       const timer = setTimeout(() => setDeepSunk(true), 2000)
       return () => clearTimeout(timer)
     }
-  }, [todayResult])
+  }, [todayResult, introPlayed, today])
 
   const requiredTasks = allTasks.filter(t => t.is_required)
   const hasNoRequiredTasks = requiredTasks.length === 0
@@ -223,7 +242,10 @@ export default function ShipDashboard() {
 
   return (
     <>
-      {!introPlayed && <IntroAnimation onDone={() => setIntroPlayed(true)} />}
+      {!introPlayed && <IntroAnimation onDone={() => {
+            localStorage.setItem('ss_barakah_last_intro', todayString())
+            setIntroPlayed(true)
+          }} />}
       {loading ? (
         <main className="min-h-screen flex items-center justify-center" style={{ background: '#061826' }}>
           <p style={{ color: '#9DD8F7' }}>Loading mission status…</p>
@@ -246,7 +268,7 @@ export default function ShipDashboard() {
       {/* ════════════════════════════════════════════════════════════
           SUCCESS BANNER — slides down from top when progress = 100
       ════════════════════════════════════════════════════════════ */}
-      {progress === 100 && !isSunk && !successBannerDismissed && (
+      {todayResult?.outcome === 'survived' && !successBannerDismissed && introPlayed && (
         <div
           role="alert"
           style={{

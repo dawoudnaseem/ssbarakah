@@ -1009,3 +1009,103 @@ Original implementation used a `useState` lazy initializer to read `localStorage
 
 ### ⚠️ alarm sound
 `public/sounds/alarm1.mp3` is the active alarm clip (13s). Only the first ~4.5s plays. Chrome autoplay policy requires a user gesture before phase 4 (8.2s) — the animation registers document-level listeners to unlock on first interaction. If Chrome support is critical, consider a short looping clip triggered on a user-visible "tap to start" prompt.
+
+---
+
+## ✅ Admin Panel Expansion & UI/UX Fixes (2026-06-07)
+
+### Admin Panel — New Tabs
+
+Two new sidebar tabs added to the admin dashboard (`src/app/admin/page.tsx`, `src/components/admin/AdminSidebar.tsx`):
+
+**📜 Ship Logs (`src/components/admin/LogsSection.tsx`)**
+- Lists all `daily_results` rows newest-first with outcome icon, date, completion %, survived/sunk pill
+- Delete button per row: deletes `task_completions` → `daily_tasks` → `teammate_daily_stats` → `daily_results` for that date in order (FK-safe)
+- Deleting also clears `ss_barakah_sunk_dismissed_*` and `ss_barakah_survived_dismissed_*` sessionStorage keys so overlays show fresh after re-finalization
+- After deletion, re-derives Chad/Chud badges from the most recent remaining log and updates `teammates` table (or clears all badges if no logs remain)
+- Confirmation modal warns that tasks + completions are also wiped
+
+**📝 Daily Tasks (`src/components/admin/DailyTasksSection.tsx`)**
+- Shows all today's `daily_tasks` grouped by teammate
+- Edit modal per task: name, points, required toggle
+- Delete per task: removes `task_completions` + `daily_tasks` + matching `recurring_tasks` entry (by `preset_task_id` for preset tasks, by `name` for custom) so the task doesn't re-seed tomorrow
+
+**`AdminSection` type** exported from `AdminSidebar.tsx` and imported by `admin/page.tsx` (previously duplicated).
+
+---
+
+### Finalize Tab — improvements
+
+**Already-finalized warning:** On mount, `FinalizeSection` checks Supabase for a `daily_results` row for today. If found, shows an amber warning: "Today's voyage is already finalized — delete it from Ship Logs to re-run." Re-checks after successful finalization (`done` in dependency array).
+
+**Redirect after finalization:** After `finalizeDay` succeeds, `FinalizeSection` now calls `router.replace('/')` so the admin is sent to the ship page and sees the sinking/survival animation — same as all other teammates.
+
+**Session key cleanup:** Before redirecting, clears `ss_barakah_sunk_dismissed_${today}` and `ss_barakah_survived_dismissed_${today}` from sessionStorage so the overlay/banner always show fresh.
+
+---
+
+### Intro Animation — once per day (restored)
+
+The once-per-day gate was previously removed at user request, then restored. Current behaviour:
+- `introPlayed` initialises to `true` (SSR-safe — avoids hydration mismatch)
+- A `useEffect` on mount reads `localStorage.getItem('ss_barakah_last_intro')` and sets `introPlayed = false` if it doesn't match today
+- `onDone` callback in `page.tsx` writes `localStorage.setItem('ss_barakah_last_intro', todayString())` before setting `introPlayed = true`
+- Animation plays exactly once per day per browser; subsequent page loads or reloads that day skip it
+
+---
+
+### Sinking / Success Animation — reliability fixes
+
+**Problem 1 — animation hidden behind intro:** If a user lands on `/` for the first time today (e.g. admin redirected from `/admin`), the intro plays at z-index 200 for ~19 seconds. The sinking animation was firing during that window, meaning the ship was off-screen by the time the intro finished.
+**Fix:** The sink trigger effect now checks `introPlayed` before firing. Added `introPlayed` to the effect's dependency array so it re-evaluates when the intro finishes.
+
+**Problem 2 — `sinkTriggeredRef` never reset:** The latch was never cleared after a log deletion, so re-finalizing after deleting a log showed no animation.
+**Fix:** Added `prevSunkRef` to track the previous sunk state. When `todayResult` transitions from sunk → null (log deleted), the latch resets, `sinkingWorkers`/`deepSunk` reset, `failureOverlayDismissed` resets, and the sessionStorage dismiss key is removed.
+
+**Problem 3 — dismissed sessionStorage key not cleared between test runs:** If the user dismissed the overlay, deleted the log quickly (before the 15s poll ran), and re-finalized, the sessionStorage key was never cleared because the poll never fired to detect the null transition. The fresh mount's sessionStorage check then set `failureOverlayDismissed = true`, silently skipping the overlay.
+**Fix:** `LogsSection` explicitly removes the dismiss keys on log deletion. `FinalizeSection` also removes them before redirecting.
+
+**Success banner** — condition changed from `progress === 100` to `todayResult?.outcome === 'survived'`. The banner previously fired the moment all tasks were done mid-day, before finalization. It now only shows after the day has been officially finalized as survived.
+
+**Admin redirect** — `FinalizeSection` now redirects to `/` on success so the admin sees the animation (same as all other teammates).
+
+**Teammate dashboard → ship redirect** — a 10-second polling effect in `src/app/teammate/[teammateId]/page.tsx` checks `daily_results` for today and calls `router.replace('/')` when a result appears, so all teammates are automatically sent to the ship page when the day ends.
+
+---
+
+### Badges — live refresh
+
+**Teammate dashboard:** `current_chad`/`current_chud` were read from localStorage (set at login, never updated). Now the auth guard effect also fires a Supabase `.select('*').eq('id', current.id).single()` call and overwrites the teammate state with fresh DB data, so badges reflect the latest finalization.
+
+**Log deletion:** After deleting a ship log, `LogsSection` clears all badges on the `teammates` table, then re-applies from the most recent remaining log's `chad_teammate_id`/`chud_teammate_id`. If no logs remain, all badges are cleared.
+
+---
+
+### Supabase permissions — DELETE/UPDATE unblocked
+
+**Root cause:** Supabase's anon role did not have `DELETE` or `UPDATE` privileges on the tables. Deletes were silently returning HTTP 204 with 0 rows affected and no error.
+
+**Fix:** Migration `supabase/migrations/004_disable_rls.sql` — disables RLS on all 7 tables and grants `SELECT, INSERT, UPDATE, DELETE` to both `anon` and `authenticated` roles. Must be run once in the Supabase SQL editor.
+
+---
+
+### Auto-finalization — smarter guard
+
+The auto-finalization in `page.tsx` was unconditionally recreating deleted logs in any browser that loaded the ship page.
+
+**Fix:** Auto-finalization now only runs if yesterday has `daily_tasks` but no `daily_results`. The condition is:
+```ts
+if (!yResult && yTasks && yTasks.length > 0) {
+  await finalizeDay(yesterday)
+}
+```
+Deleting a ship log (via the Logs tab) also deletes all `daily_tasks` for that date, so no tasks remain and auto-finalization has nothing to act on — the log stays deleted across all browsers.
+
+---
+
+### Behaviour when tab was closed during sinking
+
+If a user closes their tab and the ship sinks while they're away, they will see the full sinking animation + overlay when they reopen. This works by design:
+- `sinkTriggeredRef` is `false` on every fresh mount
+- `failureOverlayDismissed` is `false` on fresh mount (sessionStorage is cleared on tab close)
+- `fetchData` returns the sunk `daily_results` row immediately → animation triggers
