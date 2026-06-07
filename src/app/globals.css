@@ -17,9 +17,9 @@ html, body {
   font-family: Arial, Helvetica, sans-serif;
 }
 
-@keyframes wave {
-  0%   { transform: translateX(0); }
-  100% { transform: translateX(-50%); }
+@keyframes wave-scroll {
+  from { background-position-x: 0; }
+  to   { background-position-x: -800px; }
 }
 
 @keyframes float {
@@ -32,8 +32,19 @@ html, body {
   50%       { transform: translateY(-5px) rotate(1deg); }
 }
 
-.animate-wave {
-  animation: wave 8s linear infinite;
+.wave-back {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 800 100' preserveAspectRatio='none'%3E%3Cpath d='M0 32 Q100 10 200 32 Q300 54 400 32 Q500 10 600 32 Q700 54 800 32 L800 100 L0 100 Z' fill='%23041220' opacity='0.98'/%3E%3C/svg%3E");
+  background-repeat: repeat-x;
+  background-size: 800px 100%;
+  animation: wave-scroll 8s linear infinite;
+}
+
+.wave-front {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 800 100' preserveAspectRatio='none'%3E%3Cpath d='M0 25 Q100 8 200 25 Q300 42 400 25 Q500 8 600 25 Q700 42 800 25 L800 100 L0 100 Z' fill='%230B3558' opacity='0.94'/%3E%3C/svg%3E");
+  background-repeat: repeat-x;
+  background-size: 800px 100%;
+  animation: wave-scroll 6s linear infinite;
+  animation-delay: -2s;
 }
 
 .animate-float {

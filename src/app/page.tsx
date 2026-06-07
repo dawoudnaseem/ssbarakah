@@ -250,16 +250,8 @@ export default function ShipDashboard() {
         </div>
 
         {/* Dark back wave — z:1, behind ship + icebergs */}
-        <div className="absolute bottom-0 left-0 right-0 pointer-events-none overflow-hidden"
-          style={{ height: '44%', zIndex: 1 }} aria-hidden>
-          <div className="animate-wave flex h-full" style={{ width: '200%' }}>
-            {[0, 1].map(k => (
-              <svg key={k} viewBox="0 0 800 100" preserveAspectRatio="none" className="h-full" style={{ width: '50%' }}>
-                <path d="M0 32 Q100 10 200 32 Q300 54 400 32 Q500 10 600 32 Q700 54 800 32 L800 100 L0 100 Z" fill="#041220" opacity="0.98" />
-              </svg>
-            ))}
-          </div>
-        </div>
+        <div className="absolute bottom-0 left-0 right-0 pointer-events-none wave-back"
+          style={{ height: '44%', zIndex: 1 }} aria-hidden />
 
         {/* Small iceberg — left, base touching waterline */}
         <div className="absolute pointer-events-none animate-float"
@@ -343,16 +335,8 @@ export default function ShipDashboard() {
         </div>
 
         {/* Light front wave — z:3, IN FRONT of ship + icebergs */}
-        <div className="absolute bottom-0 left-0 right-0 pointer-events-none overflow-hidden"
-          style={{ height: '40%', zIndex: 3 }} aria-hidden>
-          <div className="animate-wave flex h-full" style={{ width: '200%', animationDuration: '6s', animationDelay: '-2s' }}>
-            {[0, 1].map(k => (
-              <svg key={k} viewBox="0 0 800 100" preserveAspectRatio="none" className="h-full" style={{ width: '50%' }}>
-                <path d="M0 25 Q100 8 200 25 Q300 42 400 25 Q500 8 600 25 Q700 42 800 25 L800 100 L0 100 Z" fill="#0B3558" opacity="0.94" />
-              </svg>
-            ))}
-          </div>
-        </div>
+        <div className="absolute bottom-0 left-0 right-0 pointer-events-none wave-front"
+          style={{ height: '40%', zIndex: 3 }} aria-hidden />
 
         {/* Scroll hint */}
         <div className="absolute left-1/2 -translate-x-1/2 flex flex-col items-center gap-1 pointer-events-none"
