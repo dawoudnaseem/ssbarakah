@@ -6,6 +6,7 @@ import IcyErrorModal from '@/components/IcyErrorModal'
 import AdminSidebar from '@/components/admin/AdminSidebar'
 import StatusSection from '@/components/admin/StatusSection'
 import CrewSection from '@/components/admin/CrewSection'
+import MissionsSection from '@/components/admin/MissionsSection'
 
 type AdminSection = 'status' | 'crew' | 'missions' | 'finalize'
 
@@ -147,7 +148,7 @@ export default function AdminPage() {
       <main className="flex-1 p-6 overflow-y-auto" style={{ marginLeft: '192px' }}>
         {section === 'status' && <StatusSection />}
         {section === 'crew' && <CrewSection />}
-        {section === 'missions' && <div style={{ color: '#9DD8F7' }}>Missions — coming in Task 7</div>}
+        {section === 'missions' && <MissionsSection />}
         {section === 'finalize' && <div style={{ color: '#9DD8F7' }}>Finalize — coming in Task 8</div>}
       </main>
     </div>
