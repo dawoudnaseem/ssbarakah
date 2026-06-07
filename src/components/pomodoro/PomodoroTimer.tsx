@@ -221,42 +221,6 @@ export default function PomodoroTimer() {
               </span>
             </div>
 
-            {/* Icicles hanging below the circle */}
-            <div
-              style={{
-                position: 'absolute',
-                bottom: '-38px',
-                left: '50%',
-                transform: 'translateX(-50%)',
-                pointerEvents: 'none',
-              }}
-            >
-              <svg viewBox="0 0 200 44" width="160px" height="44px" aria-hidden="true">
-                {/* 7 icicles of varying widths and heights, centred under the circle */}
-                {([
-                  [8,  12, 38],
-                  [28, 9,  26],
-                  [44, 13, 42],
-                  [64, 10, 30],
-                  [82, 14, 44],
-                  [104, 9, 24],
-                  [120, 12, 36],
-                ] as [number, number, number][]).map(([x, w, h], i) => (
-                  <g key={i}>
-                    <polygon
-                      points={`${x},0 ${x + w},0 ${x + w / 2},${h}`}
-                      fill="rgba(200,238,255,0.45)"
-                    />
-                    <line
-                      x1={x + 2} y1={0}
-                      x2={x + w / 2 - 1} y2={h - 5}
-                      stroke="rgba(255,255,255,0.35)"
-                      strokeWidth="1.2"
-                    />
-                  </g>
-                ))}
-              </svg>
-            </div>
           </div>
 
           {/* Fixed stop button */}
