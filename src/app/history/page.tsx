@@ -72,6 +72,15 @@ function buildHeatmapCells(
   return cells
 }
 
+function formatDate(dateStr: string): string {
+  return new Date(dateStr + 'T12:00:00').toLocaleDateString('en-US', {
+    weekday: 'long',
+    year: 'numeric',
+    month: 'short',
+    day: 'numeric',
+  })
+}
+
 function buildCrewRecords(
   teammates: Teammate[],
   stats: TeammateDailyStat[],
@@ -237,6 +246,60 @@ export default function HistoryPage() {
     )
   }
 
+  function renderDailyLog() {
+    const { results, teammates } = data!
+    // All teammates (including inactive) so old log entries with inactive Chad/Chud still resolve
+    const tmById: Record<string, string> = {}
+    for (const tm of teammates) tmById[tm.id] = tm.name
+
+    if (results.length === 0) return (
+      <div>
+        <p style={{ fontSize: '11px', fontWeight: 700, color: 'rgba(157,216,247,0.45)', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: '12px' }}>Daily Log</p>
+        <p style={{ color: 'rgba(157,216,247,0.35)', fontSize: '13px' }}>No voyages recorded yet.</p>
+      </div>
+    )
+
+    return (
+      <div>
+        <p style={{ fontSize: '11px', fontWeight: 700, color: 'rgba(157,216,247,0.45)', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: '12px' }}>Daily Log</p>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+          {results.map(r => {
+            const survived = r.outcome === 'survived'
+            const bg = survived ? 'rgba(34,197,94,0.06)' : 'rgba(220,38,38,0.06)'
+            const border = survived ? '1px solid rgba(34,197,94,0.2)' : '1px solid rgba(220,38,38,0.2)'
+            const chadName = r.chad_teammate_id ? tmById[r.chad_teammate_id] : null
+            const chudName = r.chud_teammate_id ? tmById[r.chud_teammate_id] : null
+            const pct = Math.round(r.completion_percentage)
+
+            return (
+              <div key={r.id} style={{ borderRadius: '10px', padding: '14px 18px', display: 'flex', alignItems: 'center', gap: '14px', background: bg, border }}>
+                <span style={{ fontSize: '22px', flexShrink: 0 }}>{survived ? '⛵' : '🌊'}</span>
+                <div style={{ flex: 1 }}>
+                  <div style={{ fontSize: '11px', color: 'rgba(157,216,247,0.4)' }}>{formatDate(r.result_date)}</div>
+                  <div style={{ fontSize: '13px', fontWeight: 700, color: '#F2FBFF' }}>{survived ? 'Ship Survived' : 'Ship Sank'}</div>
+                  <div style={{ display: 'flex', gap: '8px', marginTop: '5px', flexWrap: 'wrap' }}>
+                    {chadName && (
+                      <span style={{ fontSize: '11px', padding: '2px 8px', borderRadius: '20px', background: 'rgba(245,158,11,0.12)', color: '#F59E0B' }}>⚓ Chad: {chadName}</span>
+                    )}
+                    <span style={{ fontSize: '11px', padding: '2px 8px', borderRadius: '20px', background: 'rgba(220,38,38,0.12)', color: '#DC2626' }}>
+                      💀 Chud: {chudName ?? 'None'}
+                    </span>
+                    {r.total_required_tasks > 0 && (
+                      <span style={{ fontSize: '11px', padding: '2px 8px', borderRadius: '20px', background: 'rgba(157,216,247,0.1)', color: '#9DD8F7' }}>
+                        {r.completed_required_tasks}/{r.total_required_tasks} crew complete
+                      </span>
+                    )}
+                  </div>
+                </div>
+                <div style={{ fontSize: '22px', fontWeight: 800, color: 'rgba(157,216,247,0.25)', flexShrink: 0 }}>{pct}%</div>
+              </div>
+            )
+          })}
+        </div>
+      </div>
+    )
+  }
+
   return (
     <div style={{ minHeight: '100vh', background: '#061826', paddingTop: '80px' }}>
       <div style={{ maxWidth: '860px', margin: '0 auto', padding: '32px 24px' }}>
@@ -250,7 +313,7 @@ export default function HistoryPage() {
         <hr style={{ border: 'none', borderTop: '1px solid rgba(157,216,247,0.08)', margin: '28px 0' }} />
         {renderCrewRecords()}
         <hr style={{ border: 'none', borderTop: '1px solid rgba(157,216,247,0.08)', margin: '28px 0' }} />
-        {/* Daily log coming */}
+        {renderDailyLog()}
       </div>
     </div>
   )
