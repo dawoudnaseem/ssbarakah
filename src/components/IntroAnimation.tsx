@@ -37,26 +37,26 @@ const WORKERS = [
 
 // ─── Phase timeline ───────────────────────────────────────────────────────────
 // phase | at ms  | what
-//   1   |   400  | ship sails in
-//   2   |  2800  | Araf bubble
-//   3   |  4200  | Dawoud bubble
-//   4   |  5400  | Everyone bubble
-//   5   |  6200  | iceberg slams in
-//   6   |  6800  | impact: shake + red alarm + crack draw + alarm sound
-//   7   |  8200  | red fades, ship tilts, workers panic
-//   8   | 10000  | scene fades to black
-//   complete | 11500 | onDone
+//   1   |   400  | ship sails in from left (2s transition)
+//   2   |  3500  | Araf bubble: "Yo, word on the street..."
+//   3   |  6000  | Dawoud bubble: "Wdym bro?"
+//   4   |  8200  | Everyone bubble: "AHHHHHHHHHHH"
+//   5   | 10000  | iceberg slams in from right
+//   6   | 11000  | impact: shake + red alarm + crack draw + alarm sound
+//   7   | 13000  | red fades, ship tilts −20°, workers appear & panic
+//   8   | 16000  | scene fades to black
+//   complete | 18000 | onDone
 const PHASE_TIMINGS: { at: number; phase: number }[] = [
   { at: 400,   phase: 1 },
-  { at: 2800,  phase: 2 },
-  { at: 4200,  phase: 3 },
-  { at: 5400,  phase: 4 },
-  { at: 6200,  phase: 5 },
-  { at: 6800,  phase: 6 },
-  { at: 8200,  phase: 7 },
-  { at: 10000, phase: 8 },
+  { at: 3500,  phase: 2 },
+  { at: 6000,  phase: 3 },
+  { at: 8200,  phase: 4 },
+  { at: 10000, phase: 5 },
+  { at: 11000, phase: 6 },
+  { at: 13000, phase: 7 },
+  { at: 16000, phase: 8 },
 ]
-const COMPLETE_AT = 11500
+const COMPLETE_AT = 18000
 
 export default function IntroAnimation({ onDone }: { onDone: () => void }) {
   const [phase, setPhase] = useState(0)

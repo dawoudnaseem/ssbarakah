@@ -70,11 +70,23 @@ export default function ShipDashboard() {
   const countdown = useCountdown()
 
   // ── Daily intro crash animation ───────────────────────────────────────────
-  // Lazy initializer runs synchronously client-side → no flash of the intro
-  // when it has already played today.
-  const [introPlayed, setIntroPlayed] = useState(
-    () => typeof window !== 'undefined' && localStorage.getItem('ss_barakah_last_intro') === todayString()
-  )
+  // Initialize to true (don't show intro). After mount, check localStorage
+  // and flip to false if the intro hasn't played today yet.
+  // Cannot use a lazy initializer here: Next.js SSR renders this component
+  // server-side with window=undefined (returns false), then React requires the
+  // client hydration to start with the same value — so the real localStorage
+  // check never runs during hydration. Using useEffect avoids the mismatch.
+  const [introPlayed, setIntroPlayed] = useState(true)
+
+  useEffect(() => {
+    try {
+      if (localStorage.getItem('ss_barakah_last_intro') !== today) {
+        setIntroPlayed(false)
+      }
+    } catch {
+      // localStorage unavailable — skip intro
+    }
+  }, [today])
 
   const [teammates, setTeammates] = useState<Teammate[]>([])
   const [allTasks, setAllTasks] = useState<DailyTask[]>([])
