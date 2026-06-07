@@ -70,10 +70,10 @@ export default function LoginPage() {
         {/* Large ship — center, tilted 5° */}
         <div
           className="animate-bob pointer-events-none"
-          style={{ transform: 'rotate(5deg)', transformOrigin: 'center bottom' }}
+          style={{ transform: 'rotate(5deg)', transformOrigin: 'center bottom', width: 'min(340px, 85vw)' }}
           aria-hidden
         >
-          <svg width="340" height="170" viewBox="0 0 340 170" fill="none">
+          <svg viewBox="0 0 340 170" style={{ width: '100%', height: 'auto', display: 'block' }} fill="none">
             {/* Hull */}
             <path d="M30 110 L310 110 L290 148 L50 148 Z" fill="#061826" stroke="#9DD8F7" strokeWidth="2" />
             {/* Deck */}
