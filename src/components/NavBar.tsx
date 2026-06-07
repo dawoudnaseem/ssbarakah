@@ -52,7 +52,7 @@ export default function NavBar() {
   return (
     <>
       <nav
-        className="fixed top-0 left-0 right-0 z-30 flex items-center justify-between px-4 sm:px-6 h-14"
+        className="fixed top-0 left-0 right-0 z-50 flex items-center justify-between px-4 sm:px-6 h-14"
         style={{
           background: 'rgba(6,24,38,0.92)',
           backdropFilter: 'blur(14px)',
@@ -110,10 +110,12 @@ export default function NavBar() {
                 <div
                   className="absolute right-0 top-full mt-2 w-44 rounded-xl py-1 overflow-hidden"
                   style={{
-                    background: 'rgba(6,24,38,0.95)',
-                    backdropFilter: 'blur(16px)',
-                    border: '1px solid rgba(157,216,247,0.18)',
-                    boxShadow: '0 8px 24px rgba(0,0,0,0.4)',
+                    background: 'rgba(14,55,90,0.96)',
+                    backdropFilter: 'blur(24px) saturate(1.4)',
+                    WebkitBackdropFilter: 'blur(24px) saturate(1.4)',
+                    border: '1px solid rgba(157,216,247,0.30)',
+                    boxShadow: '0 8px 32px rgba(0,0,0,0.5), inset 0 1px 0 rgba(157,216,247,0.15)',
+                    zIndex: 50,
                   }}
                 >
                   <Link
@@ -160,15 +162,18 @@ export default function NavBar() {
       {/* Mobile drawer */}
       {showDrawer && (
         <div
-          className="fixed inset-0 z-20 sm:hidden"
+          className="fixed inset-0 sm:hidden"
+          style={{ zIndex: 50 }}
           onClick={() => setShowDrawer(false)}
         >
           <div
             className="absolute top-14 left-0 right-0 flex flex-col py-2"
             style={{
-              background: 'rgba(6,24,38,0.97)',
-              backdropFilter: 'blur(16px)',
-              borderBottom: '1px solid rgba(157,216,247,0.15)',
+              background: 'rgba(14,55,90,0.82)',
+              backdropFilter: 'blur(24px) saturate(1.4)',
+              WebkitBackdropFilter: 'blur(24px) saturate(1.4)',
+              borderBottom: '1px solid rgba(157,216,247,0.25)',
+              boxShadow: '0 8px 32px rgba(0,0,0,0.4), inset 0 -1px 0 rgba(157,216,247,0.1)',
             }}
             onClick={e => e.stopPropagation()}
           >

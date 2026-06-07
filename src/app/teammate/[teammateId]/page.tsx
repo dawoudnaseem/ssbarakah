@@ -354,75 +354,91 @@ export default function TeammatePage({ params }: { params: Promise<{ teammateId:
   }
 
   return (
-    <main
-      className="min-h-screen px-4 py-6"
-      style={{ background: 'linear-gradient(180deg, #061826 0%, #0B3558 100%)', color: '#F2FBFF' }}
-    >
-      <div className="max-w-2xl mx-auto flex flex-col gap-6">
+    <div style={{ background: '#020810', color: '#F2FBFF' }}>
 
-        {/* ── Header ── */}
-        <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-2xl font-bold tracking-wide" style={{ color: '#F2FBFF' }}>
-              {teammate?.name ?? ''}
-            </h1>
-            <div className="flex items-center gap-2 mt-1">
-              {isChadBadge && (
-                <span className="text-xs font-bold px-2 py-0.5 rounded-full" style={{ background: '#F59E0B', color: '#061826' }}>
-                  ⚓ Chad of the Day
-                </span>
-              )}
-              {isChadChud && (
-                <span className="text-xs font-bold px-2 py-0.5 rounded-full" style={{ background: '#DC2626', color: '#F2FBFF' }}>
-                  💀 Chud of the Day
-                </span>
-              )}
+      {/* ── Surface section: arctic gradient ── */}
+      <div className="px-4 py-6" style={{ background: 'linear-gradient(180deg, #061826 0%, #0B3558 100%)' }}>
+        <div className="max-w-2xl mx-auto flex flex-col gap-6">
+
+          {/* ── Header ── */}
+          <div className="flex items-center justify-between">
+            <div>
+              <h1 className="text-2xl font-bold tracking-wide" style={{ color: '#F2FBFF' }}>
+                {teammate?.name ?? ''}
+              </h1>
+              <div className="flex items-center gap-2 mt-1">
+                {isChadBadge && (
+                  <span className="text-xs font-bold px-2 py-0.5 rounded-full" style={{ background: '#F59E0B', color: '#061826' }}>
+                    ⚓ Chad of the Day
+                  </span>
+                )}
+                {isChadChud && (
+                  <span className="text-xs font-bold px-2 py-0.5 rounded-full" style={{ background: '#DC2626', color: '#F2FBFF' }}>
+                    💀 Chud of the Day
+                  </span>
+                )}
+              </div>
             </div>
-          </div>
-          <button
-            onClick={handleLogout}
-            className="text-xs px-3 py-2 rounded-lg transition-opacity hover:opacity-70"
-            style={{ background: 'rgba(157,216,247,0.1)', border: '1px solid rgba(157,216,247,0.2)', color: '#9DD8F7' }}
-          >
-            Log out
-          </button>
-        </div>
-
-        {/* ── Stats row ── */}
-        <div className="grid grid-cols-3 gap-3">
-          {[
-            { label: 'Points Today', value: points },
-            { label: 'Tasks Done', value: `${completedRequired} / ${totalRequired}` },
-            { label: 'Streak', value: `${streak}d` },
-          ].map(s => (
-            <div
-              key={s.label}
-              className="rounded-xl p-3 text-center"
-              style={{ background: 'rgba(11,53,88,0.6)', border: '1px solid rgba(157,216,247,0.15)' }}
+            <button
+              onClick={handleLogout}
+              className="text-xs px-3 py-2 rounded-lg transition-opacity hover:opacity-70"
+              style={{ background: 'rgba(157,216,247,0.1)', border: '1px solid rgba(157,216,247,0.2)', color: '#9DD8F7' }}
             >
-              <p className="text-2xl font-bold" style={{ color: '#9DD8F7' }}>{s.value}</p>
-              <p className="text-xs mt-0.5" style={{ color: 'rgba(242,251,255,0.55)' }}>{s.label}</p>
-            </div>
-          ))}
-        </div>
+              Log out
+            </button>
+          </div>
 
-        {/* ── Activity Heatmap ── */}
-        <div
-          className="rounded-xl p-4"
-          style={{ background: 'rgba(11,53,88,0.4)', border: '1px solid rgba(157,216,247,0.1)' }}
-        >
-          <p className="text-xs font-semibold uppercase tracking-widest mb-3" style={{ color: '#9DD8F7' }}>Activity Heatmap</p>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(20, 1fr)', gap: '3px', width: '100%' }}>
-            {buildHeatmapCells(teammate?.id ?? '', heatmapStats).map(cell => (
-              <div key={cell.date} style={{ aspectRatio: '1', borderRadius: '3px', background: cell.color }} />
+          {/* ── Stats row ── */}
+          <div className="grid grid-cols-3 gap-3">
+            {[
+              { label: 'Points Today', value: points },
+              { label: 'Tasks Done', value: `${completedRequired} / ${totalRequired}` },
+              { label: 'Streak', value: `${streak}d` },
+            ].map(s => (
+              <div
+                key={s.label}
+                className="rounded-xl p-3 text-center"
+                style={{ background: 'rgba(11,53,88,0.6)', border: '1px solid rgba(157,216,247,0.15)' }}
+              >
+                <p className="text-2xl font-bold" style={{ color: '#9DD8F7' }}>{s.value}</p>
+                <p className="text-xs mt-0.5" style={{ color: 'rgba(242,251,255,0.55)' }}>{s.label}</p>
+              </div>
             ))}
           </div>
-          <p className="mt-2" style={{ fontSize: '10px', color: 'rgba(157,216,247,0.3)' }}>
-            Last 60 days — darker = low pts · gold = high pts · red = missed required
-          </p>
-        </div>
 
-        <PomodoroTimer />
+          {/* ── Activity Heatmap ── */}
+          <div
+            className="rounded-xl p-4"
+            style={{ background: 'rgba(11,53,88,0.4)', border: '1px solid rgba(157,216,247,0.1)' }}
+          >
+            <p className="text-xs font-semibold uppercase tracking-widest mb-3" style={{ color: '#9DD8F7' }}>Activity Heatmap</p>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(20, 1fr)', gap: '3px', width: '100%' }}>
+              {buildHeatmapCells(teammate?.id ?? '', heatmapStats).map(cell => (
+                <div key={cell.date} style={{ aspectRatio: '1', borderRadius: '3px', background: cell.color }} />
+              ))}
+            </div>
+            <p className="mt-2" style={{ fontSize: '10px', color: 'rgba(157,216,247,0.3)' }}>
+              Last 60 days — darker = low pts · gold = high pts · red = missed required
+            </p>
+          </div>
+
+          <PomodoroTimer />
+
+        </div>
+      </div>
+
+      {/* ── Abyss transition ── */}
+      <div style={{ height: '100px', background: 'linear-gradient(180deg, #0B3558 0%, #020810 100%)' }} />
+
+      {/* ── Deep waters section ── */}
+      <div className="px-4 pb-6" style={{ background: '#020810' }}>
+        <div className="max-w-2xl mx-auto flex flex-col gap-6">
+
+          <div className="flex items-center gap-3">
+            <div style={{ flex: 1, height: '1px', background: 'rgba(157,216,247,0.07)' }} />
+            <p className="text-xs tracking-widest uppercase" style={{ color: 'rgba(157,216,247,0.22)' }}>— deep waters —</p>
+            <div style={{ flex: 1, height: '1px', background: 'rgba(157,216,247,0.07)' }} />
+          </div>
 
         {/* ── Required tasks ── */}
         <section>
@@ -603,6 +619,10 @@ export default function TeammatePage({ params }: { params: Promise<{ teammateId:
           />
         )}
 
+          {/* Bottom padding clears any fixed bars */}
+          <div style={{ height: '20px' }} />
+
+        </div>
       </div>
 
       {taskToDelete && (
@@ -618,7 +638,7 @@ export default function TeammatePage({ params }: { params: Promise<{ teammateId:
           onDeleteForever={() => deleteTask(taskToDelete, 'forever')}
         />
       )}
-    </main>
+    </div>
   )
 }
 
