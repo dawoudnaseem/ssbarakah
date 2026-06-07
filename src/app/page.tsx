@@ -11,6 +11,7 @@ import Leaderboard from '@/components/leaderboard/Leaderboard'
 import RecentRepairsFeed from '@/components/leaderboard/RecentRepairsFeed'
 import BadgeDisplay from '@/components/leaderboard/BadgeDisplay'
 import SunkOverlay from '@/components/SunkOverlay'
+import IntroAnimation from '@/components/IntroAnimation'
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -67,6 +68,13 @@ function useCountdown() {
 export default function ShipDashboard() {
   const today = useMemo(() => todayString(), [])
   const countdown = useCountdown()
+
+  // ── Daily intro crash animation ───────────────────────────────────────────
+  // Lazy initializer runs synchronously client-side → no flash of the intro
+  // when it has already played today.
+  const [introPlayed, setIntroPlayed] = useState(
+    () => typeof window !== 'undefined' && localStorage.getItem('ss_barakah_last_intro') === todayString()
+  )
 
   const [teammates, setTeammates] = useState<Teammate[]>([])
   const [allTasks, setAllTasks] = useState<DailyTask[]>([])
@@ -219,6 +227,7 @@ export default function ShipDashboard() {
   if (loading) {
     return (
       <main className="min-h-screen flex items-center justify-center" style={{ background: '#061826' }}>
+        {!introPlayed && <IntroAnimation onDone={() => setIntroPlayed(true)} />}
         <p style={{ color: '#9DD8F7' }}>Loading mission status…</p>
       </main>
     )
@@ -226,6 +235,11 @@ export default function ShipDashboard() {
 
   return (
     <div style={{ background: '#020810' }}>
+
+      {!introPlayed && (
+        <IntroAnimation onDone={() => setIntroPlayed(true)} />
+      )}
+
 
       {/* ════════════════════════════════════════════════════════════
           FAILURE OVERLAY — full-screen, above progress bar (z:60)

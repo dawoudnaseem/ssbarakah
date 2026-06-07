@@ -132,3 +132,51 @@ html, body {
 .confetti-particle {
   animation: confetti-rise 1.5s ease-out forwards;
 }
+
+/* ─── Daily intro crash animation ─────────────────────────────────────────── */
+
+@keyframes ship-sail-in {
+  from { transform: translateX(-110vw); }
+  to   { transform: translateX(0); }
+}
+
+@keyframes iceberg-slam {
+  from { transform: translateX(110vw); }
+  to   { transform: translateX(0); }
+}
+
+@keyframes pulse-red {
+  0%, 100% { opacity: 0; }
+  50%       { opacity: 1; }
+}
+
+@keyframes screen-shake {
+  0%, 100%        { transform: translate(0, 0); }
+  10%, 30%, 50%, 70%, 90% { transform: translate(-6px, 2px); }
+  20%, 40%, 60%, 80%      { transform: translate(6px, -2px); }
+}
+
+@keyframes intro-fade-out {
+  from { opacity: 1; }
+  to   { opacity: 0; }
+}
+
+.animate-ship-sail-in {
+  animation: ship-sail-in 2s ease-out forwards;
+}
+
+.animate-iceberg-slam {
+  animation: iceberg-slam 0.5s ease-in forwards;
+}
+
+.animate-screen-shake {
+  animation: screen-shake 0.5s ease-in-out;
+}
+
+.animate-pulse-red {
+  animation: pulse-red 0.3s linear infinite;
+}
+
+.animate-intro-fade-out {
+  animation: intro-fade-out 1.5s ease-out forwards;
+}
