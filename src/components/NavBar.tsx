@@ -115,7 +115,7 @@ export default function NavBar() {
                     WebkitBackdropFilter: 'blur(24px) saturate(1.4)',
                     border: '1px solid rgba(157,216,247,0.30)',
                     boxShadow: '0 8px 32px rgba(0,0,0,0.5), inset 0 1px 0 rgba(157,216,247,0.15)',
-                    zIndex: 50,
+                    zIndex: 56,
                   }}
                 >
                   <Link

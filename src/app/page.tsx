@@ -172,7 +172,7 @@ export default function ShipDashboard() {
 
   // Read sessionStorage success banner dismissed flag on mount
   useEffect(() => {
-    const key = `ss_barakah_survived_${today}`
+    const key = `ss_barakah_survived_dismissed_${today}`
     if (typeof window !== 'undefined' && sessionStorage.getItem(key) === '1') {
       setSuccessBannerDismissed(true)
     }
@@ -205,7 +205,7 @@ export default function ShipDashboard() {
   const chudEntry = leaderboard.find(e => e.teammate.current_chud)
 
   function handleDismissSuccess() {
-    const key = `ss_barakah_survived_${today}`
+    const key = `ss_barakah_survived_dismissed_${today}`
     sessionStorage.setItem(key, '1')
     setSuccessBannerDismissed(true)
   }
@@ -243,17 +243,17 @@ export default function ShipDashboard() {
       ════════════════════════════════════════════════════════════ */}
       {progress === 100 && !isSunk && !successBannerDismissed && (
         <div
+          role="alert"
           style={{
             position: 'fixed',
             top: '56px',
             left: 0,
             right: 0,
-            zIndex: 55,
+            zIndex: 49,
             background: 'rgba(6,24,38,0.92)',
             backdropFilter: 'blur(20px)',
             borderBottom: '1px solid rgba(34,197,94,0.4)',
             animation: 'slide-down 0.6s ease-out',
-            overflow: 'hidden',
           }}
         >
           {/* Confetti particles */}
@@ -282,8 +282,8 @@ export default function ShipDashboard() {
               position: 'absolute',
               top: '8px',
               right: '12px',
-              width: '36px',
-              height: '36px',
+              width: '44px',
+              height: '44px',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
