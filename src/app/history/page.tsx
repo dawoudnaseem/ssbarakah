@@ -220,9 +220,9 @@ export default function HistoryPage() {
                   <p style={{ fontSize: '10px', color: 'rgba(157,216,247,0.3)', marginBottom: '5px' }}>
                     Last 60 days — darker = low pts · gold = high pts · red = missed required
                   </p>
-                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(20, 14px)', gridTemplateRows: 'repeat(3, 14px)', gap: '3px', width: 'fit-content' }}>
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(20, 1fr)', gap: '3px', width: '100%' }}>
                     {buildHeatmapCells(rec.teammate.id, stats).map(cell => (
-                      <div key={cell.date} style={{ width: '14px', height: '14px', borderRadius: '3px', background: cell.color }} />
+                      <div key={cell.date} style={{ aspectRatio: '1', borderRadius: '3px', background: cell.color }} />
                     ))}
                   </div>
                 </div>
