@@ -116,3 +116,19 @@ html, body {
 .animate-worker-sink {
   animation: worker-sink 2s ease-in forwards;
 }
+
+/* Success banner slide-down */
+@keyframes slide-down {
+  from { transform: translateY(-100%); }
+  to   { transform: translateY(0); }
+}
+
+/* Confetti particles that rise and fade */
+@keyframes confetti-rise {
+  from { transform: translateY(0) rotate(0deg); opacity: 1; }
+  to   { transform: translateY(-120px) rotate(360deg) scale(0); opacity: 0; }
+}
+
+.confetti-particle {
+  animation: confetti-rise 1.5s ease-out forwards;
+}

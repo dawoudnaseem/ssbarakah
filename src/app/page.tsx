@@ -80,6 +80,7 @@ export default function ShipDashboard() {
   const [sinkingWorkers, setSinkingWorkers] = useState(false)
   const [deepSunk, setDeepSunk] = useState(false)
   const [failureOverlayDismissed, setFailureOverlayDismissed] = useState(false)
+  const [successBannerDismissed, setSuccessBannerDismissed] = useState(false)
   const sinkTriggeredRef = useRef(false)
 
   const fetchData = useCallback(async () => {
@@ -169,6 +170,14 @@ export default function ShipDashboard() {
     }
   }, [today])
 
+  // Read sessionStorage success banner dismissed flag on mount
+  useEffect(() => {
+    const key = `ss_barakah_survived_${today}`
+    if (typeof window !== 'undefined' && sessionStorage.getItem(key) === '1') {
+      setSuccessBannerDismissed(true)
+    }
+  }, [today])
+
   // Trigger sinking animation exactly once when todayResult becomes sunk
   useEffect(() => {
     const isSunk = todayResult?.outcome === 'sunk'
@@ -194,6 +203,12 @@ export default function ShipDashboard() {
 
   const chadEntry = leaderboard.find(e => e.teammate.current_chad)
   const chudEntry = leaderboard.find(e => e.teammate.current_chud)
+
+  function handleDismissSuccess() {
+    const key = `ss_barakah_survived_${today}`
+    sessionStorage.setItem(key, '1')
+    setSuccessBannerDismissed(true)
+  }
 
   function handleDismissOverlay() {
     const key = `ss_barakah_sunk_dismissed_${today}`
@@ -221,6 +236,81 @@ export default function ShipDashboard() {
           chudEntry={chudEntry}
           onDismiss={handleDismissOverlay}
         />
+      )}
+
+      {/* ════════════════════════════════════════════════════════════
+          SUCCESS BANNER — slides down from top when progress = 100
+      ════════════════════════════════════════════════════════════ */}
+      {progress === 100 && !isSunk && !successBannerDismissed && (
+        <div
+          style={{
+            position: 'fixed',
+            top: '56px',
+            left: 0,
+            right: 0,
+            zIndex: 55,
+            background: 'rgba(6,24,38,0.92)',
+            backdropFilter: 'blur(20px)',
+            borderBottom: '1px solid rgba(34,197,94,0.4)',
+            animation: 'slide-down 0.6s ease-out',
+            overflow: 'hidden',
+          }}
+        >
+          {/* Confetti particles */}
+          {CONFETTI_PARTICLES.map((p, i) => (
+            <div
+              key={i}
+              className="confetti-particle"
+              style={{
+                position: 'absolute',
+                bottom: 0,
+                left: p.left,
+                width: '8px',
+                height: '8px',
+                borderRadius: '2px',
+                background: p.color,
+                animationDelay: p.delay,
+              }}
+            />
+          ))}
+
+          {/* Dismiss button */}
+          <button
+            onClick={handleDismissSuccess}
+            aria-label="Dismiss success banner"
+            style={{
+              position: 'absolute',
+              top: '8px',
+              right: '12px',
+              width: '36px',
+              height: '36px',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              background: 'transparent',
+              border: 'none',
+              color: 'rgba(157,216,247,0.7)',
+              fontSize: '18px',
+              cursor: 'pointer',
+              borderRadius: '50%',
+              lineHeight: 1,
+            }}
+          >
+            ×
+          </button>
+
+          {/* Banner content */}
+          <div style={{ textAlign: 'center', padding: '20px 56px 20px 56px' }}>
+            <p style={{ color: '#22C55E', fontSize: '20px', fontWeight: 'bold', margin: 0 }}>
+              ⛵ The ship survived!
+            </p>
+            {chadEntry && (
+              <p style={{ color: '#F59E0B', fontSize: '14px', marginTop: '6px', marginBottom: 0 }}>
+                Chad of the Day: {chadEntry.teammate.name} 🏆 — {chadEntry.points} pts
+              </p>
+            )}
+          </div>
+        </div>
       )}
 
       {/* ════════════════════════════════════════════════════════════
@@ -445,6 +535,19 @@ export default function ShipDashboard() {
     </div>
   )
 }
+
+// ─── Pre-computed confetti positions ─────────────────────────────────────────
+
+const CONFETTI_PARTICLES = [
+  { left: '8%',  color: '#9DD8F7', delay: '0s'   },
+  { left: '20%', color: '#22C55E', delay: '0.1s'  },
+  { left: '32%', color: '#F59E0B', delay: '0.2s'  },
+  { left: '44%', color: '#A78BFA', delay: '0.3s'  },
+  { left: '56%', color: '#9DD8F7', delay: '0.4s'  },
+  { left: '68%', color: '#22C55E', delay: '0.5s'  },
+  { left: '80%', color: '#F59E0B', delay: '0.6s'  },
+  { left: '92%', color: '#A78BFA', delay: '0.7s'  },
+]
 
 // ─── Pre-computed stars ───────────────────────────────────────────────────────
 
