@@ -104,16 +104,24 @@ src/
       [teammateId]/
         page.tsx                    — teammate dashboard (Task 4; uses React.use(params))
     admin/
-      (not yet built — Task 11)
+      page.tsx                      — admin dashboard with code gate + Crew/Missions/Finalize tabs
     history/
-      (not yet built — Task 13)
+      page.tsx                      — History/Stats page (Fleet Summary, Crew Records, Daily Log)
   components/
-    IcyModal.tsx                    — base modal wrapper: backdrop + SVG icicles + glossy-ice card shell; all modals use this
+    IcyModal.tsx                    — base modal wrapper: backdrop + SVG icicles + glossy-ice card shell; ALL modals use this
     ConditionalNav.tsx              — hides NavBar on /login; renders h-14 spacer elsewhere
     NavBar.tsx                      — fixed top bar; logo, nav links, avatar dropdown, hamburger
     LoginModal.tsx                  — overlay login form triggered from NavBar; uses IcyModal
-    IcyErrorModal.tsx               — frosted glass error modal (red border, dismiss on click); uses IcyModal
+    IcyErrorModal.tsx               — frosted glass error modal (red border, dismiss on click); uses IcyModal; prop is `onDismiss`
     DeleteConfirmModal.tsx          — delete task confirmation; 2-btn (non-recurring) or 3-btn (recurring) variant; uses IcyModal
+    admin/
+      AdminCodeGate.tsx             — code input gate; validates via validateAdminCode(); sessionStorage-backed
+      TeammatesSection.tsx          — add/edit/delete/toggle teammates
+      MissionsSection.tsx           — create/edit/delete preset tasks
+      FinalizeSection.tsx           — manual day finalization trigger with confirm modal and double-submit guard
+    leaderboard/
+      Leaderboard.tsx               — leaderboard rows with amber #1 glow, Chad/Chud pills
+      RecentRepairsFeed.tsx         — recent task completions feed
   lib/
     supabaseClient.ts               — singleton Supabase browser client
     auth.ts                         — loginTeammate, logoutTeammate, getCurrentTeammate, admin helpers
@@ -591,6 +599,62 @@ All five inconsistencies found in the review were fixed:
 5. **Brainstorm before building** any new feature or page — use the brainstorming skill, get design approval before writing code.
 6. **Read `AGENTS.md`** (which references `node_modules/next/dist/docs/`) before writing any Next.js code.
 
+## ✅ Task 10 — Chad/Chud Badge Logic (2026-06-06)
+
+`calculateChad` and `calculateChud` implemented in `src/lib/calculations.ts`:
+
+- **`calculateChad(stats)`** — returns the `teammate_id` with the highest `points_earned` for the day. Tiebreak: lowest `teammate_id` first. Returns `null` if stats array is empty.
+- **`calculateChud(stats)`** — only eligible teammates have `missed_required_tasks > 0`. Among eligible: lowest `points_earned` first; tiebreak: most `missed_required_tasks`; final tiebreak: lowest `teammate_id`. Returns `null` if nobody missed required tasks.
+
+Badge persistence: `finalizeDay` calls both functions and writes `current_chad = true` / `current_chud = true` to the `teammates` table after each finalization. These flags persist on the `teammates` table until the next finalization clears and reassigns them — meaning a teammate carries their badge all the following day (intentional "walk of shame" / "day of honour" mechanic).
+
+Badge display: Chad/Chud pills already rendered in `src/components/leaderboard/Leaderboard.tsx` (from Task 9) using `entry.teammate.current_chad` and `entry.teammate.current_chud`. No new component needed.
+
+New tests added to `src/__tests__/calculations.test.ts` covering: no stats → null, single teammate, ties on points (lowest id wins for Chad), ties on points with missed tasks (highest missed wins for Chud), nobody missed (Chud = null).
+
+---
+
+## ✅ Task 11 — Admin Dashboard (2026-06-06)
+
+Route: `/admin` — protected by admin code gate.
+
+**Files created:**
+- `src/app/admin/page.tsx` — top-level admin page; renders `<AdminCodeGate>` which conditionally shows the dashboard once authenticated; section switcher for Crew / Missions / Finalize tabs
+- `src/components/admin/AdminCodeGate.tsx` — code input form; validates via `validateAdminCode()` from `src/lib/auth.ts`; stores session via `setAdminSession()`; checks `isAdminAuthenticated()` on mount to skip gate if already authenticated in this tab's sessionStorage
+- `src/components/admin/TeammatesSection.tsx` — teammate management: add (name + password), edit name, change password, toggle `is_active`, soft-delete. All via Supabase direct calls. Uses `IcyModal` for edit/add modals, `IcyErrorModal` for errors.
+- `src/components/admin/MissionsSection.tsx` — preset task management: create, edit, delete preset tasks. Fields: name, category (Islamic/Regular), points, `is_repeatable`, `default_max_completions`, `can_be_recurring`. `confirmDelete` wrapped in try/catch with `IcyErrorModal` feedback (fix applied in code quality review).
+- `src/components/admin/FinalizeSection.tsx` — manual finalization trigger. States: idle → confirming (`IcyModal` with red accent) → running (spinner, Confirm button `disabled`) → done (green success box + Reset button) or error (`IcyErrorModal`). Uses `useRef` guard to prevent double-submit. `todayString()` called inside `handleFinalize` (not at component scope, to avoid stale date on long-open tabs). Reset button clears both `done` and `error` states.
+
+**Key implementation detail:** `IcyModal` uses `onClose` prop; `IcyErrorModal` uses `onDismiss` prop — these are different and must not be swapped.
+
+---
+
+## ✅ Task 12 — Daily Finalization (2026-06-06)
+
+`finalizeDay(dateStr: string)` implemented in `src/lib/finalization.ts`. It is **idempotent** — safe to call multiple times for the same date (checks for existing `daily_results` row and returns early if found).
+
+**Steps inside `finalizeDay`:**
+1. Fetch all active teammates
+2. Fetch all `daily_tasks` for the given date
+3. Fetch all `task_completions` for those tasks
+4. Fetch all `preset_tasks` to identify which tasks are required (`is_required = true` on `daily_tasks`)
+5. For each teammate: calculate `points_earned`, `completed_required_tasks`, `total_required_tasks`, `missed_required_tasks`
+6. Determine `outcome`: `'survived'` if all teammates completed all their required tasks; `'sunk'` otherwise
+7. Determine `chad_teammate_id` via `calculateChad`, `chud_teammate_id` via `calculateChud`
+8. Calculate fleet-wide `completion_percentage`
+9. Insert row into `daily_results` (idempotency check is on this insert — if row exists, abort)
+10. Insert rows into `teammate_daily_stats` for each teammate
+11. Update `current_chad` / `current_chud` booleans on `teammates` table (clear all first, then set winners)
+12. Call `createNextDayRecurringTasks(dateStr)` to seed recurring tasks for the following day
+
+**Auto-trigger on app open:** `src/app/layout.tsx` (or `src/app/page.tsx`) checks on mount whether yesterday has a `daily_results` row; if not, calls `finalizeDay(yesterdayString())`. This handles the case where midnight passed without anyone having the app open.
+
+**Tests:** `src/__tests__/finalization.test.ts` covers the full flow with a mocked Supabase client. TS2367 type error fixed in tests: `const missed: number = 2` (not `const missed = 2`) to avoid TypeScript literal type narrowing false positives.
+
+**Test count after Tasks 10–12:** 60 tests, all passing.
+
+---
+
 ## Task 13 — History/Stats Page (2026-06-06)
 
 Route: `/history` (already linked in NavBar).
@@ -608,3 +672,46 @@ Single file: `src/app/history/page.tsx`.
 **Data:** All fetched once on mount via `Promise.all` — no polling. Sources: `daily_results`, `teammate_daily_stats`, `teammates`, `task_completions`.
 
 **No new tests** — no new logic functions; all derived values are simple in-memory sums and counts.
+
+### Task 13 — Final Review & Fixes (2026-06-06, this session)
+
+A final overall code reviewer ran against the completed implementation. All cross-cutting checks passed (no `Math.random()`, `'use client'` present, heatmap produces exactly 60 cells, loading/error/empty states all present, NavBar already wired to `/history`). One important fix was identified:
+
+**Fix — `paddingTop: '80px'` → `'56px'` in three places:**
+- The NavBar is `h-14` (56px). All other pages use `paddingTop: '56px'`. The history page used `'80px'` in its error branch, loading branch, and the main render root — leaving a 24px dead zone at the top of the page. Fixed in all three occurrences in `src/app/history/page.tsx`. Committed: `fix: align history page paddingTop to 56px (matches NavBar height)`.
+
+Two suggestions were noted but not acted on (low risk, by design):
+1. `calcStreak` relies on caller passing newest-first sorted array — it does (query sorts descending), but has no internal guard. Fine for this codebase size.
+2. Chud chip always renders (shows "💀 Chud: None" when absent); Chad chip is omitted when null. Asymmetry is intentional per spec.
+
+**Final state:** 60 tests passing, `npx tsc --noEmit` clean. All work on `main` branch (no separate feature branch was used). Committed and pushed to GitHub.
+
+---
+
+### ✅ Task 13 — Complete (2026-06-06)
+
+`src/app/history/page.tsx` created. Key implementation details:
+
+**Helper functions (above component):**
+- `localDateStr(d: Date)` — builds `YYYY-MM-DD` using local time (`getFullYear/getMonth/getDate`), NOT `toISOString()` which gives UTC and causes off-by-one bugs for UTC-negative timezones
+- `calcStreak(results)` — iterates newest-first, compares each result's date to expected date (today − i); breaks on date gap OR sunk outcome
+- `heatmapColor(points, missedRequired)` — red override if `missedRequired > 0`; warm scale: 0pts ghost → `#7C3200` → `#B84A00` → `#F97316` → `#FBBF24`
+- `buildHeatmapCells(teammateId, stats)` — builds lookup by date, loops `i = 59` down to `0` (oldest to newest), produces exactly 60 cells
+- `formatDate(dateStr)` — appends `T12:00:00` before constructing `Date` to avoid UTC midnight off-by-one; uses `month: 'long'` for full month names
+
+**Data fetch:**
+```ts
+const [r1, r2, r3, r4] = await Promise.all([
+  supabase.from('daily_results').select('*').order('result_date', { ascending: false }),
+  supabase.from('teammate_daily_stats').select('*'),
+  supabase.from('teammates').select('*'),
+  supabase.from('task_completions').select('teammate_id'),
+])
+```
+Checks `r1.error || r2.error || r3.error || r4.error` and sets `fetchError` string on any failure.
+
+**Render structure:** Three inline functions `renderFleetSummary()`, `renderCrewRecords()`, `renderDailyLog()` called from the JSX return. `data` is destructured once after both loading and error guards: `const { results, stats, teammates, completionCounts } = data!`
+
+**Crew records:** `activeTeammates = teammates.filter(t => t.is_active)` sorted by total points desc. Top scorer gets amber styling.
+
+**Daily log:** `tmById` built from ALL teammates (including inactive) so historical names still resolve.
