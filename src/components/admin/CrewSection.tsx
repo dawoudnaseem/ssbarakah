@@ -19,6 +19,7 @@ const inputStyle: React.CSSProperties = {
 
 export default function CrewSection() {
   const [teammates, setTeammates] = useState<Teammate[]>([])
+  const [loading, setLoading]         = useState(true)
   const [editName, setEditName]       = useState<Record<string, string>>({})
   const [editPw, setEditPw]           = useState<Record<string, string>>({})
   const [saving, setSaving]           = useState<Record<string, boolean>>({})
@@ -28,26 +29,32 @@ export default function CrewSection() {
   const [adding, setAdding]           = useState(false)
 
   async function fetchTeammates() {
+    setLoading(true)
     const { data } = await supabase.from('teammates').select('*').order('name')
     setTeammates((data ?? []) as Teammate[])
+    setLoading(false)
   }
 
   useEffect(() => { fetchTeammates() }, [])
 
   async function saveRow(tm: Teammate) {
+    if (saving[tm.id]) return
     setSaving(s => ({ ...s, [tm.id]: true }))
-    const name = editName[tm.id] ?? tm.name
-    if (name !== tm.name) {
-      await supabase.from('teammates').update({ name, updated_at: new Date().toISOString() }).eq('id', tm.id)
+    try {
+      const name = editName[tm.id] ?? tm.name
+      if (name !== tm.name) {
+        await supabase.from('teammates').update({ name, updated_at: new Date().toISOString() }).eq('id', tm.id)
+      }
+      const pw = editPw[tm.id]
+      if (pw) {
+        await changeTeammatePassword(tm.id, pw)
+      }
+      setEditName(e => { const n = { ...e }; delete n[tm.id]; return n })
+      setEditPw(e => { const n = { ...e }; delete n[tm.id]; return n })
+      fetchTeammates()
+    } finally {
+      setSaving(s => ({ ...s, [tm.id]: false }))
     }
-    const pw = editPw[tm.id]
-    if (pw) {
-      await changeTeammatePassword(tm.id, pw)
-    }
-    setEditName(e => { const n = { ...e }; delete n[tm.id]; return n })
-    setEditPw(e => { const n = { ...e }; delete n[tm.id]; return n })
-    setSaving(s => ({ ...s, [tm.id]: false }))
-    fetchTeammates()
   }
 
   async function toggleActive(tm: Teammate) {
@@ -84,6 +91,11 @@ export default function CrewSection() {
     <div>
       <h2 className="text-lg font-bold mb-4" style={{ color: '#F2FBFF' }}>Crew</h2>
 
+      {loading ? (
+        <p className="mb-6" style={{ color: '#9DD8F7' }}>Loading…</p>
+      ) : teammates.length === 0 ? (
+        <p className="mb-6" style={{ color: 'rgba(157,216,247,0.45)', fontSize: 13 }}>No crew members yet.</p>
+      ) : (
       <div className="flex flex-col gap-3 mb-6">
         {teammates.map(tm => (
           <div key={tm.id} className="rounded-xl p-4 flex flex-wrap items-center gap-3"
@@ -127,6 +139,7 @@ export default function CrewSection() {
           </div>
         ))}
       </div>
+      )}
 
       <div className="rounded-xl p-4 flex flex-wrap items-center gap-3"
         style={{ border: '1px dashed rgba(157,216,247,0.2)' }}>
