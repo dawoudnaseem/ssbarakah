@@ -39,29 +39,43 @@ const WORKERS = [
 //   1   |   400  | ship sails in from left (2s transition)
 //   2   |  3500  | Araf bubble: "Yo, word on the street..."
 //   3   |  6000  | Dawoud bubble: "Wdym bro?"
-//   4   |  8200  | Everyone bubble: "AHHHHHHHHHHH"
-//   5   | 10000  | iceberg slams in from right
-//   6   | 11000  | impact: shake + red alarm + crack draw + alarm sound
-//   7   | 13000  | red fades, ship tilts −20°, workers appear & panic
-//   8   | 16000  | scene fades to black
-//   complete | 18000 | onDone
+//   4   |  8200  | Everyone bubble: "AHHHHHHHHHHH" + red alarm lights + alarm sound starts
+//   5   | 12700  | iceberg slams in from right (~4.5s of alarm before crash)
+//   6   | 13700  | impact: screen shake + crack draw; audio paused (only first ~4.5s used)
+//   7   | 15700  | red fades, ship tilts −20°, workers appear & panic
+//   8   | 19000  | scene fades to black
+//   complete | 21000 | onDone
 const PHASE_TIMINGS: { at: number; phase: number }[] = [
   { at: 400,   phase: 1 },
   { at: 3500,  phase: 2 },
   { at: 6000,  phase: 3 },
   { at: 8200,  phase: 4 },
-  { at: 10000, phase: 5 },
-  { at: 11000, phase: 6 },
-  { at: 13000, phase: 7 },
-  { at: 16000, phase: 8 },
+  { at: 12700, phase: 5 },
+  { at: 13700, phase: 6 },
+  { at: 15700, phase: 7 },
+  { at: 19000, phase: 8 },
 ]
-const COMPLETE_AT = 18000
+const COMPLETE_AT = 21000
 
 export default function IntroAnimation({ onDone }: { onDone: () => void }) {
   const [phase, setPhase] = useState(0)
   const timeoutsRef = useRef<ReturnType<typeof setTimeout>[]>([])
   const audioRef = useRef<HTMLAudioElement>(null)
   const doneRef = useRef(false)
+  const audioUnlockedRef = useRef(false)
+
+  // Browsers block autoplay until a user gesture. Touch/click anywhere on the
+  // overlay to silently play+pause, which marks the audio element as unlocked.
+  function unlockAudio() {
+    if (audioUnlockedRef.current || !audioRef.current) return
+    audioUnlockedRef.current = true
+    audioRef.current.muted = true
+    audioRef.current.play().then(() => {
+      audioRef.current!.pause()
+      audioRef.current!.currentTime = 0
+      audioRef.current!.muted = false
+    }).catch(() => {})
+  }
 
   function clearAllTimeouts() {
     timeoutsRef.current.forEach(clearTimeout)
@@ -80,12 +94,27 @@ export default function IntroAnimation({ onDone }: { onDone: () => void }) {
   }
 
   useEffect(() => {
+    // Chrome requires a real user gesture on the document. Register listeners
+    // for the first interaction so audio is unlocked before phase 4 fires.
+    const events = ['mousedown', 'touchstart', 'keydown', 'pointerdown'] as const
+    const onGesture = () => {
+      unlockAudio()
+      events.forEach(e => document.removeEventListener(e, onGesture))
+    }
+    events.forEach(e => document.addEventListener(e, onGesture, { once: true, passive: true }))
+
+    // Also attempt on mount (works on Safari / Firefox where page-load click propagates).
+    unlockAudio()
+
     PHASE_TIMINGS.forEach(({ at, phase: p }) => {
       timeoutsRef.current.push(
         setTimeout(() => {
           setPhase(p)
-          if (p === 6) {
+          if (p === 4) {
             audioRef.current?.play().catch(() => {})
+          }
+          if (p === 6) {
+            audioRef.current?.pause()
           }
         }, at)
       )
@@ -94,6 +123,7 @@ export default function IntroAnimation({ onDone }: { onDone: () => void }) {
 
     return () => {
       clearAllTimeouts()
+      events.forEach(e => document.removeEventListener(e, onGesture))
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
@@ -121,6 +151,7 @@ export default function IntroAnimation({ onDone }: { onDone: () => void }) {
       role="dialog"
       aria-label="Ship intro animation"
       aria-modal="true"
+      onClick={unlockAudio}
       style={{
         position: 'fixed',
         inset: 0,
@@ -130,7 +161,7 @@ export default function IntroAnimation({ onDone }: { onDone: () => void }) {
       }}
     >
       {/* Alarm audio — not visible */}
-      <audio ref={audioRef} src="/sounds/alarm.mp3" preload="auto" />
+      <audio ref={audioRef} src="/sounds/alarm1.mp3" preload="auto" />
 
       {/* Stars */}
       <div className="absolute inset-0 pointer-events-none" aria-hidden="true">
@@ -157,16 +188,16 @@ export default function IntroAnimation({ onDone }: { onDone: () => void }) {
         aria-hidden="true"
       />
 
-      {/* Red alarm overlay */}
+      {/* Red alarm overlay — starts at phase 4 (screaming), pulses through crash, fades at phase 7 */}
       <div
-        className={phase === 6 ? 'animate-pulse-red' : ''}
+        className={phase >= 4 && phase <= 6 ? 'animate-pulse-red' : ''}
         style={{
           position: 'absolute',
           inset: 0,
           zIndex: 50,
           pointerEvents: 'none',
           background: 'rgba(220,38,38,0.65)',
-          opacity: phase === 6 ? undefined : 0,
+          opacity: phase >= 4 && phase <= 6 ? undefined : 0,
           transition: phase >= 7 ? 'opacity 0.6s ease-out' : undefined,
         }}
       />

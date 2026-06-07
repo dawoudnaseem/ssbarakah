@@ -942,8 +942,8 @@ Implemented in worktree `feature/task-16-ship-animations` via 4 sub-tasks. All p
 | done | 11500ms | `onDone()` called |
 
 **Modified:** `src/app/page.tsx`
-- `introPlayed` state: lazy initializer reads `localStorage.getItem('ss_barakah_last_intro') === todayString()` on first render — no hydration flash
-- `<IntroAnimation>` rendered as first child of a single `<>` fragment return, outside both loading/main branches — one React instance for the full 11.5s sequence
+- `introPlayed` state: initialized to `false` — animation plays on every page load (no localStorage gate)
+- `<IntroAnimation>` rendered as first child of a single `<>` fragment return, outside both loading/main branches — one React instance for the full 18s sequence
 
 **New CSS in `globals.css`:**
 - `@keyframes pulse-red`: opacity pulse for red alarm overlay
@@ -951,11 +951,34 @@ Implemented in worktree `feature/task-16-ship-animations` via 4 sub-tasks. All p
 - `@keyframes intro-fade-out`: opacity 1 → 0
 - `.animate-pulse-red`, `.animate-screen-shake`, `.animate-intro-fade-out`
 
+### Post-completion fixes (2026-06-07)
+
+**Bug fix — frozen frame on reload + skip not working:**
+Original implementation used a `useState` lazy initializer to read `localStorage`. In Next.js App Router, SSR renders the component with `window = undefined` (lazy init returns `false`), and React hydration must match the server value — so the localStorage check never ran on reload. The result: IntroAnimation always mounted with a stale hydrated DOM, frozen at frame 0, with no live React events (skip button dead). Fixed by using a `useEffect` instead.
+
+**"Play on every reload":** User requested the animation play on every page load rather than once per day. Removed the localStorage gate entirely — `introPlayed` is now simply `useState(false)`. Also removed the `localStorage.setItem` call from `IntroAnimation.tsx` and the unused `todayString` import.
+
+**Animation extended to 18s:** Phase timings stretched so each dialog bubble has ~2s of reading time; aftermath (tilted ship + panicking workers) extended to 3s before fade.
+
+### Final timing (PHASE_TIMINGS in IntroAnimation.tsx)
+
+| Phase | Timing | Event |
+|-------|--------|-------|
+| 1 | 400ms | Ship sails in from left |
+| 2 | 3500ms | Araf dialog bubble |
+| 3 | 6000ms | Dawoud dialog bubble |
+| 4 | 8200ms | Everyone dialog bubble |
+| 5 | 10000ms | Iceberg slams in from right |
+| 6 | 11000ms | Screen shake + alarm + crack draws |
+| 7 | 13000ms | Alarm fades, ship tilts, workers panic |
+| 8 | 16000ms | Scene fades to black |
+| done | 18000ms | `onDone()` called |
+
 ### Final z-index Stack (page.tsx dashboard)
 
 | z-index | Element |
 |---------|---------|
-| 200 | IntroAnimation (full-screen, once per day) |
+| 200 | IntroAnimation (full-screen, every page load) |
 | 65 | SunkOverlay dismiss button |
 | 60 | SunkOverlay (sunk day failure) |
 | 56 | NavBar avatar dropdown |
