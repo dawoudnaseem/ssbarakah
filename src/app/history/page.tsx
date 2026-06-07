@@ -12,13 +12,20 @@ interface HistoryData {
 }
 
 function calcStreak(results: DailyResult[]): number {
-  // results are already sorted newest-first
+  // results are sorted newest-first
+  // A gap in dates (missing day) breaks the streak
   let streak = 0
-  for (const r of results) {
+  for (let i = 0; i < results.length; i++) {
+    const r = results[i]
+    // Check for date gap: expected date is today minus i days
+    const expected = new Date()
+    expected.setDate(expected.getDate() - i)
+    const expectedStr = expected.toISOString().split('T')[0]
+    if (r.result_date !== expectedStr) break  // gap in dates — streak ends
     if (r.outcome === 'survived') {
       streak++
     } else {
-      break
+      break  // sunk day — streak ends
     }
   }
   return streak
@@ -76,7 +83,7 @@ function formatDate(dateStr: string): string {
   return new Date(dateStr + 'T12:00:00').toLocaleDateString('en-US', {
     weekday: 'long',
     year: 'numeric',
-    month: 'short',
+    month: 'long',
     day: 'numeric',
   })
 }
