@@ -578,3 +578,21 @@ All five inconsistencies found in the review were fixed:
 4. **TDD for all new logic.** Write failing test first, confirm RED, implement, confirm GREEN.
 5. **Brainstorm before building** any new feature or page — use the brainstorming skill, get design approval before writing code.
 6. **Read `AGENTS.md`** (which references `node_modules/next/dist/docs/`) before writing any Next.js code.
+
+## Task 13 — History/Stats Page (2026-06-06)
+
+Route: `/history` (already linked in NavBar).
+
+Single file: `src/app/history/page.tsx`.
+
+**Three sections:**
+
+1. **Fleet Summary** — 4 stat chips (Days Survived, Current Streak 🔥, Days Sunk, Survival Rate). All show `—` if no finalized days exist. Streak counts consecutive survived days going backwards from the newest result.
+
+2. **Crew All-Time Records** — one card per active teammate, sorted by total all-time points descending. Card has: 56px avatar (amber for top scorer), 22px name, 13px Chad/Chud count pills, 36px Total Points + Tasks Done. Below that: a 20×3 heatmap (60 cells, 14×14px, 3px gap) covering the last 60 days with a warm orange-to-gold scale; red cells = days where required tasks were missed.
+
+3. **Daily Log** — one card per `daily_results` row, newest first. Shows outcome icon (⛵/🌊), formatted date, title, Chad/Chud/crew chips, and completion %.
+
+**Data:** All fetched once on mount via `Promise.all` — no polling. Sources: `daily_results`, `teammate_daily_stats`, `teammates`, `task_completions`.
+
+**No new tests** — no new logic functions; all derived values are simple in-memory sums and counts.
