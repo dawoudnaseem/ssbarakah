@@ -144,9 +144,9 @@ export default function AdminPage() {
   }
 
   return (
-    <div className="min-h-screen flex" style={{ background: '#061826', paddingTop: '56px' }}>
+    <div className="min-h-screen flex flex-col" style={{ background: '#061826', paddingTop: '56px' }}>
       <AdminSidebar active={section} onSelect={setSection} onLogout={handleLogout} />
-      <main className="flex-1 p-6 overflow-y-auto" style={{ marginLeft: '192px' }}>
+      <main className="flex-1 p-4 sm:p-6 overflow-y-auto sm:ml-48">
         {section === 'status'   && <StatusSection />}
         {section === 'crew'     && <CrewSection />}
         {section === 'missions' && <MissionsSection />}
