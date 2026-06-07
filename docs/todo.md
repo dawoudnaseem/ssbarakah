@@ -397,13 +397,13 @@ Heatmaps on `/history` are implemented as part of Task 13. Task 14 covers adding
 ## Task 15 — Pomodoro Timer
 
 ### 15.1–15.3
-- [ ] Create `src/components/pomodoro/PomodoroTimer.tsx`
-- [ ] 25-min focus / 5-min break with auto-switch
-- [ ] Start / Pause / Reset buttons; MM:SS display
-- [ ] Embed on teammate dashboard
+- [x] Create `src/components/pomodoro/PomodoroTimer.tsx`
+- [x] 25-min focus / 5-min break with auto-switch
+- [x] Start / Pause / Reset buttons; MM:SS display
+- [x] Embed on teammate dashboard
 
 ### 15.4 Update handoff.md
-- [ ] Append summary of Task 15 to `handoff.md`
+- [x] Append summary of Task 15 to `handoff.md`
 
 ---
 

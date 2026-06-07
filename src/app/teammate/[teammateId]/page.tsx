@@ -10,6 +10,7 @@ import { buildHeatmapCells } from '@/lib/heatmap'
 import type { Teammate, DailyTask, PresetTask, RecurringTask, TeammateDailyStat } from '@/types/database'
 import { PresetTaskSelector, Field, Toggle, inputStyle } from '@/components/tasks/PresetTaskSelector'
 import DeleteConfirmModal from '@/components/DeleteConfirmModal'
+import PomodoroTimer from '@/components/pomodoro/PomodoroTimer'
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -420,6 +421,8 @@ export default function TeammatePage({ params }: { params: Promise<{ teammateId:
             Last 60 days — darker = low pts · gold = high pts · red = missed required
           </p>
         </div>
+
+        <PomodoroTimer />
 
         {/* ── Required tasks ── */}
         <section>

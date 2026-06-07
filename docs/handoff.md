@@ -4,15 +4,11 @@
 
 ---
 
-## ⏭️ Next Task: Task 15 — Pomodoro Timer
+## ⏭️ Next Task: Task 16 — Ship Animations & Visual Polish
 
-**File to create:** `src/components/pomodoro/PomodoroTimer.tsx`
+See `docs/todo.md` under "Task 16". This is a high-complexity task — decompose into sub-tasks during brainstorming.
 
-25-min focus / 5-min break timer with auto-switch, Start / Pause / Reset buttons, MM:SS display. Embed on the teammate dashboard.
-
-Full task spec is in `docs/todo.md` under "Task 15".
-
-**Before starting:** Run the brainstorming skill — this is a UI feature addition and requires design approval before coding.
+**Before starting:** Run the brainstorming skill. Break into independent sub-tasks (intro animation, sinking, overlays, sound).
 
 ---
 
@@ -757,3 +753,34 @@ Extracted three pure helper functions from `src/app/history/page.tsx` into a sha
 **Tests:** 60 passing, `npx tsc --noEmit` clean.
 
 **Next task:** Task 15 — Pomodoro Timer
+
+---
+
+## ✅ Task 15 — Pomodoro Timer (2026-06-06)
+
+Single file: `src/components/pomodoro/PomodoroTimer.tsx`. Embedded between Activity Heatmap and Required Repairs in `/teammate/[id]`.
+
+**Timer logic:**
+- Configurable focus/break durations via number inputs (shown only when stopped; hidden while running)
+- Default 25 min focus / 5 min break; Reset restores defaults and returns to focus mode
+- Indefinite auto-cycle (focus → break → focus …) until Reset
+- `visibilitychange` fix: `endTimeRef` stores absolute `Date.now() + secondsLeft * 1000` on start; recalculates `secondsLeft` when tab regains focus to correct background-tab drift
+
+**UI:**
+- MM:SS at 36px bold; mode label `FOCUS` (ice-blue) / `BREAK` (green `#22C55E`)
+- Start/Pause (ice-blue filled) + Reset (ghost) buttons
+- During break only: `🫁 Breathing Exercise` button appears
+
+**Breathing Exercise overlay:**
+- Full-screen `#020810` overlay (deep-abyss dark, same as ship dashboard scroll section)
+- 4-phase box-breathing, 5s each, loops indefinitely: breathe in → hold → breathe out → hold
+- Circle scales via `transform: scale()` CSS transition (expanded on phases 0–1, contracted on 2–3); transition duration 5s on grow/shrink phases, 0.3s on hold snaps
+- Instruction text (`Breathe in`, `Hold`, etc.) is inside the circle and scales with it
+- Break countdown shown small and fixed inside circle above the instruction text (does not scale)
+- `Stop exercise` fixed at bottom; overlay also auto-closes when break countdown hits 0
+
+**Future enhancement (logged):** Eyeless sea creatures (fish, octopus, whale) drifting in breathing overlay background — deferred to a polish pass, not in MVP.
+
+**Tests:** 60 passing, `npx tsc --noEmit` clean.
+
+**Next task:** Task 16 — Ship Animations & Visual Polish
