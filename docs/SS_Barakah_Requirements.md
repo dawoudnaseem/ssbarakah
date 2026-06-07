@@ -417,20 +417,39 @@ The modal dismisses on Cancel, backdrop click, or ESC key.
 
 ### Pomodoro Timer
 
-The teammate page should include a Pomodoro timer.
+The teammate page includes a Pomodoro timer placed between the Activity Heatmap card and the Required Repairs section.
 
-MVP Pomodoro settings:
+**Approved design (2026-06-06):**
 
-- 25-minute focus session
-- 5-minute break
-- Start button
-- Pause button
-- Reset button
+**Durations (configurable before starting):**
+- Default: 25-min focus, 5-min break
+- Two number inputs ("Focus (min)" / "Rest (min)") shown only when stopped/reset; hidden once running
+- Reset restores 25/5 defaults and returns to focus mode
 
-Optional later improvement:
+**Cycle:** focus → break → focus → … indefinitely until Reset
 
-- Let users customize focus and break length.
-- Award points for completed Pomodoro sessions.
+**Timer card UI:**
+- Section label: `FOCUS TIMER`
+- Large MM:SS display; mode label `FOCUS` (ice-blue) or `BREAK` (green `#22C55E`)
+- Buttons: Start/Pause (ice-blue filled) + Reset (ghost)
+- During break only: `🫁 Breathing Exercise` button appears
+
+**Background tab fix:** on start, store `endTime = Date.now() + secondsLeft * 1000` in a ref. On `visibilitychange` (tab becomes visible), recalculate `secondsLeft` from `endTime` to correct drift.
+
+**Breathing Exercise overlay (break mode only):**
+- Full-screen overlay, `background: #020810` (deep-abyss dark)
+- Centre circle animates a 4-phase box-breathing cycle (5 counts each, loops):
+  1. Breathe in (5s) — circle grows
+  2. Hold (5s) — circle stays large
+  3. Breathe out (5s) — circle shrinks
+  4. Hold (5s) — circle stays small
+- Instruction text (`Breathe in`, `Hold`, `Breathe out`, `Hold`) lives inside the circle and scales with it via the same CSS transform
+- Break countdown shown small and fixed inside the circle above the instruction text (does not scale)
+- `Stop exercise` button fixed at bottom, outside circle, does not scale
+- Overlay closes when break countdown hits 0 (auto) or user clicks Stop exercise
+- Circle: `rgba(157,216,247,0.15)` fill, `rgba(157,216,247,0.4)` border
+
+**Future enhancement (not in MVP):** Add eyeless sea creatures (fish, octopus, whale — no facial features, per Islamic guidelines) drifting in the breathing overlay background.
 
 ---
 
