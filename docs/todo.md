@@ -407,19 +407,19 @@ Heatmaps on `/history` are implemented as part of Task 13. Task 14 covers adding
 
 ---
 
-## Task 16 — Ship Animations & Visual Polish
+## ✅ Task 16 — Ship Animations & Visual Polish
 
 ### 16.1–16.8
-- [ ] Ship tilt smooth CSS transition
-- [ ] Wave animation keyframes
-- [ ] Worker panic / repair / celebrate / sinking states
-- [ ] Success overlay ("The ship survived!")
-- [ ] Failure/sinking animation (translateY, not iceberg crash); failure overlay with Chud callout
-- [ ] Daily intro crash animation (`IntroAnimation.tsx`) — once per day, skippable
-- [ ] Alarm sound `public/sounds/alarm.mp3`
+- [x] Ship tilt smooth CSS transition
+- [x] Wave animation keyframes
+- [x] Worker panic / repair / celebrate / sinking states
+- [x] Success overlay ("The ship survived!")
+- [x] Failure/sinking animation (translateY, not iceberg crash); failure overlay with Chud callout
+- [x] Daily intro crash animation (`IntroAnimation.tsx`) — once per day, skippable
+- [x] Alarm sound `public/sounds/alarm.mp3`
 
 ### 16.9 Update handoff.md
-- [ ] Append summary of Task 16 to `handoff.md`
+- [x] Append summary of Task 16 to `handoff.md`
 
 ---
 

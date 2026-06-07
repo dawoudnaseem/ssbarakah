@@ -865,3 +865,103 @@ The outer wrapper is `background: #020810` so there is no white flash if content
 **Fix:** Changed `py-6` → `pt-20 pb-6` on the surface section `div` so the header clears the navbar with comfortable breathing room.
 
 **Files changed:** `src/app/teammate/[teammateId]/page.tsx`
+
+---
+
+## ✅ Task 16 — Ship Animations & Visual Polish (2026-06-07)
+
+Implemented in worktree `feature/task-16-ship-animations` via 4 sub-tasks. All passed spec compliance + code quality review (two-stage review per sub-task, plus a final cross-cutting review).
+
+### Sub-task D — Alarm Sound Asset
+
+- `public/sounds/alarm.mp3` created as a minimal valid silent MP3 placeholder (431 bytes).
+- **Action required before production:** replace with a real short alarm/klaxon clip (<3s). The code handles missing/broken audio silently via `.catch(() => {})`.
+
+### Sub-task A — Sinking / Failure Animation & Overlay
+
+**New file:** `src/components/SunkOverlay.tsx`
+- Full-screen `position: fixed` overlay, `zIndex: 60`, fades in after a 3s delay (`overlay-fade-in` keyframe with `animation-fill-mode: both`)
+- Contents: "🌊 The ship has sunk." heading, list of teammates with `missedRequired > 0`, prominent Chud callout (name, tasks missed, points), dismiss `×` button (`zIndex: 65`)
+- Dismissal written to `sessionStorage` key `ss_barakah_sunk_dismissed_${today}` — auto-expires at midnight
+- `role="dialog"`, `aria-modal="true"`, `aria-label="Ship has sunk"` for accessibility
+
+**Modified:** `src/app/page.tsx`
+- 3 new states: `sinkingWorkers`, `deepSunk`, `failureOverlayDismissed`
+- `sinkTriggeredRef` prevents re-fire on 15s polls
+- `isSunk` trigger effect (deps: `[todayResult]`): sets `sinkingWorkers = true` immediately; sets `deepSunk = true` after 2000ms via `setTimeout` (cleaned up on unmount)
+- Workers: `animate-worker-sink` class when `sinkingWorkers`, `animationDelay: ${i * 0.5}s`, `animationFillMode: 'forwards'`
+- Tilt wrapper: `deepSunk ? 'translateY(300px)' : isSunk ? 'translateY(140px)' : ''`; transition overrides to `4s ease-in` when deepSunk
+- `today` changed to `useMemo(() => todayString(), [])` (prevents midnight re-render key shift)
+- `<SunkOverlay>` rendered when `isSunk && !failureOverlayDismissed`
+
+**New CSS in `globals.css`:**
+- `@keyframes worker-sink`: 0%–80% fast panic jitter, 80%–100% fade to `opacity: 0; translateY(30px)`
+- `.animate-worker-sink`: `animation: worker-sink 2s ease-in forwards`
+- `@keyframes overlay-fade-in`: opacity 0 → 1 (shared with other overlays)
+
+### Sub-task B — Success Overlay ("The ship survived!")
+
+**Modified:** `src/app/page.tsx`
+- `successBannerDismissed` state; sessionStorage key `ss_barakah_survived_dismissed_${today}`
+- `CONFETTI_PARTICLES`: 8 pre-computed items (no `Math.random()`), varied colors + left positions
+- Success banner: `position: fixed`, `top: 56px`, `zIndex: 49`, `role="alert"`, frosted green-accented panel, `slide-down 0.6s` animation
+- Contents: "⛵ The ship survived!" in green, Chad callout in amber, 8 confetti particles, 44×44px dismiss button
+- Shown when: `progress === 100 && !isSunk && !successBannerDismissed`
+
+**Modified:** `src/components/NavBar.tsx`
+- Avatar dropdown `zIndex` raised `50` → `56` (prevents success banner at z:49 + progress bar at z:50 from blocking dropdown)
+
+**New CSS in `globals.css`:**
+- `@keyframes slide-down`: translateY(-100%) → translateY(0)
+- `@keyframes confetti-rise`: translateY + rotate + scale(0) with opacity fade
+- `.confetti-particle`: `animation: confetti-rise 1.5s ease-out forwards`
+
+### Sub-task C — Daily Intro Crash Animation
+
+**New file:** `src/components/IntroAnimation.tsx`
+- `'use client'`, props: `{ onDone: () => void }`
+- Phase state machine (0–8) driven by `setTimeout` array (`timeoutsRef`); all timeouts cleared on unmount
+- `doneRef` guard — `onDone` called exactly once regardless of skip/complete race
+- **On complete or skip:** `localStorage.setItem('ss_barakah_last_intro', todayString())` → `onDone()`
+- `INTRO_STARS`: 20 pre-computed entries, no `Math.random()`
+- `role="dialog"`, `aria-modal="true"`, `aria-label="Ship intro animation"`; decorative children have `aria-hidden="true"` individually
+- Skip button: `position: absolute`, bottom/right 24px, `zIndex: 100`, ice-blue pill
+
+**Animation sequence:**
+
+| Phase | Timing | Event |
+|-------|--------|-------|
+| 1 | 400ms | Ship sails in from left (inline transform + transition) |
+| 2 | 2800ms | Araf dialog bubble |
+| 3 | 4200ms | Dawoud dialog bubble |
+| 4 | 5400ms | Everyone dialog bubble (red tint, larger) |
+| 5 | 6200ms | Iceberg slams in from right |
+| 6 | 6800ms | Screen shake + red alarm flash + crack SVG draws + alarm sound plays |
+| 7 | 8200ms | Alarm fades, ship tilts −20°, workers appear (animate-panic) |
+| 8 | 10000ms | Full scene fades out |
+| done | 11500ms | `onDone()` called |
+
+**Modified:** `src/app/page.tsx`
+- `introPlayed` state: lazy initializer reads `localStorage.getItem('ss_barakah_last_intro') === todayString()` on first render — no hydration flash
+- `<IntroAnimation>` rendered as first child of a single `<>` fragment return, outside both loading/main branches — one React instance for the full 11.5s sequence
+
+**New CSS in `globals.css`:**
+- `@keyframes pulse-red`: opacity pulse for red alarm overlay
+- `@keyframes screen-shake`: rapid translateX jitter
+- `@keyframes intro-fade-out`: opacity 1 → 0
+- `.animate-pulse-red`, `.animate-screen-shake`, `.animate-intro-fade-out`
+
+### Final z-index Stack (page.tsx dashboard)
+
+| z-index | Element |
+|---------|---------|
+| 200 | IntroAnimation (full-screen, once per day) |
+| 65 | SunkOverlay dismiss button |
+| 60 | SunkOverlay (sunk day failure) |
+| 56 | NavBar avatar dropdown |
+| 50 | NavBar `<nav>` + progress bar |
+| 49 | Success banner |
+| 40 | Mission status chip + countdown |
+
+### ⚠️ alarm.mp3 placeholder
+`public/sounds/alarm.mp3` is a silent placeholder. Replace with a real clip before using the intro animation in production.
