@@ -16,6 +16,19 @@ Full task spec is in `docs/todo.md` under "Task 15".
 
 ---
 
+## Remaining Tasks — Complexity Overview
+
+| Task | Complexity | Est. Sessions | Notes |
+|---|---|---|---|
+| 15 — Pomodoro Timer | Low-medium | 1–2 | Pure UI component, no DB. Include `visibilitychange` fix for background tabs. |
+| 16 — Ship Animations & Visual Polish | **High** | 3–4 | Most complex remaining task. Many subcomponents: sinking animation, success overlay, intro crash animation (once per day, skippable), alarm sound. Lots of visual iteration — break into sub-tasks during brainstorming. |
+| 17 — Mobile Responsiveness | Medium | 1–2 | Audit pass across all pages. Many small fixes: 44px tap targets, no horizontal scroll at 320px/375px/390px, ship scene mobile adaptation. |
+| 18 — Final QA & MVP Verification | Low | 1 | Checklist run through all Definition of Done criteria (§28). No new code expected. |
+
+**Flag for Task 16:** Plan carefully during brainstorming. Decompose into independent sub-tasks (intro animation, sinking, overlays, sound) so each can be scoped and reviewed separately without blowing context.
+
+---
+
 ## How to Start a New Session
 
 Read these files in this order:
