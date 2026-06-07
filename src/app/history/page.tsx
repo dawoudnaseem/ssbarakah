@@ -222,7 +222,11 @@ export default function HistoryPage() {
                   </p>
                   <div style={{ display: 'grid', gridTemplateColumns: 'repeat(20, 1fr)', gap: '3px', width: '100%' }}>
                     {buildHeatmapCells(rec.teammate.id, stats).map(cell => (
-                      <div key={cell.date} style={{ aspectRatio: '1', borderRadius: '3px', background: cell.color }} />
+                      // paddingBottom: '100%' = 100% of cell's own width → forces square.
+                      // Works on all Safari versions (aspect-ratio is Safari 15+ only).
+                      <div key={cell.date} style={{ position: 'relative', borderRadius: '3px', overflow: 'hidden', background: cell.color }}>
+                        <div style={{ paddingBottom: '100%' }} />
+                      </div>
                     ))}
                   </div>
                 </div>

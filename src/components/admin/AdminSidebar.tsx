@@ -25,10 +25,12 @@ export default function AdminSidebar({
   return (
     <>
       {/* ── Mobile: horizontal scroll tab strip ── */}
+      {/* Sticky wrapper has NO overflow — combining sticky+overflow on same element breaks Safari */}
       <div
-        className="sm:hidden sticky top-14 z-40 flex items-center gap-1 px-2 py-2 overflow-x-auto"
+        className="sm:hidden sticky top-14 z-40"
         style={{ background: '#0a1e2e', borderBottom: '1px solid rgba(157,216,247,0.1)' }}
       >
+        <div className="flex items-center gap-1 px-2 py-2 overflow-x-auto">
         {NAV_ITEMS.map(item => {
           const isActive = active === item.id
           const isFinalize = item.id === 'finalize'
@@ -59,7 +61,8 @@ export default function AdminSidebar({
         >
           ← Log Out
         </button>
-      </div>
+        </div>{/* end inner scrollable row */}
+      </div>{/* end outer sticky wrapper */}
 
       {/* ── Desktop: fixed vertical sidebar ── */}
       <aside
