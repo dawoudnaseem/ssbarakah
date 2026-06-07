@@ -784,3 +784,31 @@ Single file: `src/components/pomodoro/PomodoroTimer.tsx`. Embedded between Activ
 **Tests:** 60 passing, `npx tsc --noEmit` clean.
 
 **Next task:** Task 16 — Ship Animations & Visual Polish
+
+---
+
+## Task 15 — Post-completion fixes & redesign (2026-06-07)
+
+Several rounds of iteration on `src/components/pomodoro/PomodoroTimer.tsx` after the initial commit:
+
+**Bug fix — mode not switching + breathing button not appearing:**
+- Root cause: `setMode` was called inside a `setSecondsLeft` updater function (React anti-pattern — side-effect state calls inside updaters are unreliable). Also, `mode` was in the tick effect's dependency array, causing the interval to be torn down and recreated on every mode switch (race condition).
+- Fix: added `modeRef`, `focusMinsRef`, `breakMinsRef` to avoid stale closures. Tick effect depends only on `running`. `setMode` called directly, not inside an updater.
+
+**Redesign — circular progress ring + drag selector:**
+- Replaced the two number inputs with a single SVG circle that serves dual purpose:
+  - **Idle:** circular drag selector — draggable handle on the circumference sets focus minutes (1–120 min; one full loop = 120 min). Selected minutes shown large in the centre.
+  - **Running/paused:** progress ring — outline fills clockwise using `stroke-dashoffset` as time elapses. MM:SS + mode label in the centre. Ring is ice-blue during focus, green during break.
+- Break duration fixed at 5 min (not configurable). "Skip break →" button added during break.
+- Start button shows "Resume" when paused (detected via `endTimeRef.current !== null`).
+- Drag uses global `mousemove`/`mouseup`/`touchmove`/`touchend` listeners (via `useEffect` on `dragging` state) so dragging outside the SVG works correctly.
+- `totalSecsRef` (ref, not state) tracks the total seconds for the current session phase — used for progress ring calculation without causing extra re-renders.
+
+**Breathing overlay — icy appearance:**
+- Circle: translucent ice radial-gradient background, `2px solid rgba(200,238,255,0.9)` border, outer glow + inner highlight via `box-shadow`, `backdropFilter: blur(8px)`.
+- Icicles below the circle were added then removed (they didn't scale with the circle since they were positioned absolutely outside the transform).
+- `breathReady` flag: delays the first `scale(1)` transition by one `requestAnimationFrame` so the browser paints the circle at `scale(0.55)` first — ensuring the "breathe in" phase correctly grows from small to large.
+
+**Text centering in SVG:**
+- Used `dominantBaseline="middle"` so `y` is the true visual midpoint of each text element.
+- Final positions (user-adjusted): number at `CY + 4`, label at `CY + 24` — user iterated to find the best visual balance.
