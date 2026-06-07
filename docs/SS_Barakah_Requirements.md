@@ -1134,7 +1134,7 @@ Each teammate has a heatmap showing their consistency over time.
 - Each cell = one day, 14×14px, 3px gap
 - Left-to-right, top-to-bottom = oldest to newest (last 60 days)
 - Visible on the `/history` page inside each teammate's crew card
-- Planned for teammate dashboard in Task 14 (not yet implemented)
+- Also visible on the teammate dashboard (`/teammate/[id]`) — implemented in Task 14
 
 **Colour scale (warm tones, based on `points_earned`):**
 

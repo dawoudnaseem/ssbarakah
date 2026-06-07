@@ -4,13 +4,13 @@
 
 ---
 
-## ⏭️ Next Task: Task 14 — Heatmap on Teammate Dashboard
+## ⏭️ Next Task: Task 15 — Pomodoro Timer
 
-**File to modify:** `src/app/teammate/[teammateId]/page.tsx`
+**File to create:** `src/components/pomodoro/PomodoroTimer.tsx`
 
-Add a personal 20×3 heatmap (same design as the one in `/history`) to each teammate's dashboard. Source data: `teammate_daily_stats` filtered to the logged-in teammate only.
+25-min focus / 5-min break timer with auto-switch, Start / Pause / Reset buttons, MM:SS display. Embed on the teammate dashboard.
 
-Full task spec is in `docs/todo.md` under "Task 14". Heatmap helper code (colours, `buildHeatmapCells` logic) already exists in `src/app/history/page.tsx` and can be referenced or extracted.
+Full task spec is in `docs/todo.md` under "Task 15".
 
 **Before starting:** Run the brainstorming skill — this is a UI feature addition and requires design approval before coding.
 
@@ -715,3 +715,30 @@ Checks `r1.error || r2.error || r3.error || r4.error` and sets `fetchError` stri
 **Crew records:** `activeTeammates = teammates.filter(t => t.is_active)` sorted by total points desc. Top scorer gets amber styling.
 
 **Daily log:** `tmById` built from ALL teammates (including inactive) so historical names still resolve.
+
+---
+
+## ✅ Task 14 — Heatmap on Teammate Dashboard (2026-06-06)
+
+**Design:** Option A — heatmap grid + legend only. No extra stats alongside the grid (streak is already shown in the stats row above; total points over 60 days would be misleading vs all-time figures).
+
+**New file: `src/lib/heatmap.ts`**
+Extracted three pure helper functions from `src/app/history/page.tsx` into a shared lib:
+- `localDateStr(d)` — `YYYY-MM-DD` from local time (not UTC)
+- `heatmapColor(points, missedRequired)` — warm colour scale; red override if `missedRequired > 0`
+- `buildHeatmapCells(teammateId, stats)` — returns exactly 60 `{ color, date }` cells, oldest→newest
+
+**Modified: `src/app/history/page.tsx`**
+- Added `import { localDateStr, buildHeatmapCells } from '@/lib/heatmap'`
+- Removed the three now-duplicate inline function definitions (~35 lines)
+
+**Modified: `src/app/teammate/[teammateId]/page.tsx`**
+- Added `import { buildHeatmapCells } from '@/lib/heatmap'`
+- Added `heatmapStats: TeammateDailyStat[]` state (initially `[]`)
+- Expanded `fetchStreak` query from `select('stat_date, completed_all_required')` → `select('*')` and calls `setHeatmapStats(data)` — no extra Supabase round-trip
+- Replaced the "Heatmap coming in Task 14" placeholder with the real 20×3 CSS grid using `buildHeatmapCells(teammate?.id ?? '', heatmapStats)`
+- Uses `teammate?.id ?? ''` (optional chaining) consistent with rest of file; empty string produces all-ghost cells if somehow null
+
+**Tests:** 60 passing, `npx tsc --noEmit` clean.
+
+**Next task:** Task 15 — Pomodoro Timer

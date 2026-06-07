@@ -386,11 +386,11 @@ Single file: `src/app/history/page.tsx` — three sections:
 Heatmaps on `/history` are implemented as part of Task 13. Task 14 covers adding the same heatmap to the individual teammate dashboard page.
 
 ### 14.1–14.2
-- [ ] Add personal heatmap (20×3, same warm colour scale) to `src/app/teammate/[teammateId]/page.tsx`
-- [ ] Source data from `teammate_daily_stats` for the logged-in teammate only
+- [x] Add personal heatmap (20×3, same warm colour scale) to `src/app/teammate/[teammateId]/page.tsx`
+- [x] Source data from `teammate_daily_stats` for the logged-in teammate only
 
 ### 14.3 Update handoff.md
-- [ ] Append summary of Task 14 to `handoff.md`
+- [x] Append summary of Task 14 to `handoff.md`
 
 ---
 
