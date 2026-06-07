@@ -75,6 +75,12 @@ export default function ShipDashboard() {
   const [loading, setLoading] = useState(true)
   const hasCheckedYesterdayRef = useRef(false)
 
+  // ── Sinking animation state ──────────────────────────────────────────────────
+  const [sinkingWorkers, setSinkingWorkers] = useState(false)
+  const [deepSunk, setDeepSunk] = useState(false)
+  const [failureOverlayDismissed, setFailureOverlayDismissed] = useState(false)
+  const sinkTriggeredRef = useRef(false)
+
   const fetchData = useCallback(async () => {
     // Silently finalize yesterday once per mount
     if (!hasCheckedYesterdayRef.current) {
@@ -154,10 +160,28 @@ export default function ShipDashboard() {
     return () => clearInterval(id)
   }, [fetchData])
 
+  // Read sessionStorage dismissed flag on mount
+  useEffect(() => {
+    const key = `ss_barakah_sunk_dismissed_${today}`
+    if (typeof window !== 'undefined' && sessionStorage.getItem(key) === '1') {
+      setFailureOverlayDismissed(true)
+    }
+  }, [today])
+
+  // Trigger sinking animation exactly once when isSunk becomes true
+  const isSunk = todayResult?.outcome === 'sunk'
+  useEffect(() => {
+    if (isSunk && !sinkTriggeredRef.current) {
+      sinkTriggeredRef.current = true
+      setSinkingWorkers(true)
+      const timer = setTimeout(() => setDeepSunk(true), 2000)
+      return () => clearTimeout(timer)
+    }
+  }, [isSunk])
+
   const requiredTasks = allTasks.filter(t => t.is_required)
   const hasNoRequiredTasks = requiredTasks.length === 0
   const progress = calculateTeamProgress(allTasks)
-  const isSunk = todayResult?.outcome === 'sunk'
   const status = getMissionStatus(progress, isSunk)
   const statusColor = STATUS_COLORS[status]
   const shipTilt = isSunk ? -30 : -(15 - (progress / 100) * 15)
@@ -177,8 +201,83 @@ export default function ShipDashboard() {
     )
   }
 
+  function handleDismissOverlay() {
+    const key = `ss_barakah_sunk_dismissed_${today}`
+    sessionStorage.setItem(key, '1')
+    setFailureOverlayDismissed(true)
+  }
+
   return (
     <div style={{ background: '#020810' }}>
+
+      {/* ════════════════════════════════════════════════════════════
+          FAILURE OVERLAY — full-screen, above progress bar (z:60)
+      ════════════════════════════════════════════════════════════ */}
+      {isSunk && !failureOverlayDismissed && (
+        <div
+          className="fixed inset-0 flex flex-col items-center justify-center"
+          style={{
+            zIndex: 60,
+            background: 'rgba(2,8,16,0.92)',
+            opacity: 1,
+            animation: 'overlay-fade-in 1s ease-in 3s both',
+          }}
+        >
+          <div className="max-w-lg w-full mx-4 flex flex-col items-center gap-6 text-center">
+            <h1 className="text-4xl font-bold" style={{ color: '#F2FBFF' }}>
+              🌊 The ship has sunk.
+            </h1>
+
+            {/* Teammates who missed required tasks */}
+            {leaderboard.some(e => e.missedRequired > 0) && (
+              <div className="w-full rounded-2xl p-4"
+                style={{ background: 'rgba(220,38,38,0.1)', border: '1px solid rgba(220,38,38,0.3)' }}>
+                <p className="text-xs font-semibold uppercase tracking-widest mb-3"
+                  style={{ color: 'rgba(157,216,247,0.5)' }}>
+                  Crew who missed required tasks
+                </p>
+                <ul className="flex flex-col gap-1.5">
+                  {leaderboard
+                    .filter(e => e.missedRequired > 0)
+                    .map(e => (
+                      <li key={e.teammate.id} className="text-sm" style={{ color: 'rgba(242,251,255,0.75)' }}>
+                        <strong style={{ color: '#F2FBFF' }}>{e.teammate.name}</strong>
+                        {' '}— {e.missedRequired} required task{e.missedRequired !== 1 ? 's' : ''} missed
+                      </li>
+                    ))
+                  }
+                </ul>
+              </div>
+            )}
+
+            {/* Chud callout */}
+            {chudEntry && (
+              <div className="w-full rounded-2xl p-4"
+                style={{ background: 'rgba(220,38,38,0.15)', border: '2px solid rgba(220,38,38,0.5)' }}>
+                <p className="text-base font-bold" style={{ color: '#DC2626' }}>
+                  💀 Chud of the Day:{' '}
+                  <span style={{ color: '#F2FBFF' }}>{chudEntry.teammate.name}</span>
+                  {' '}— {chudEntry.missedRequired} tasks missed, {chudEntry.points} points
+                </p>
+              </div>
+            )}
+          </div>
+
+          {/* Dismiss button — bottom-right */}
+          <button
+            onClick={handleDismissOverlay}
+            className="fixed bottom-24 right-6 text-xs px-3 py-1.5 rounded-full"
+            style={{
+              background: 'rgba(157,216,247,0.1)',
+              border: '1px solid rgba(157,216,247,0.3)',
+              color: 'rgba(157,216,247,0.7)',
+              cursor: 'pointer',
+            }}
+          >
+            Dismiss ×
+          </button>
+        </div>
+      )}
 
       {/* ════════════════════════════════════════════════════════════
           FIXED overlays — always on top regardless of scroll
@@ -287,7 +386,11 @@ export default function ShipDashboard() {
           aria-hidden
         >
           {/* Tilt */}
-          <div style={{ transform: `rotate(${shipTilt}deg) ${isSunk ? 'translateY(140px)' : ''}`, transition: 'transform 1.5s ease-in-out', transformOrigin: 'center bottom' }}>
+          <div style={{
+            transform: `rotate(${shipTilt}deg) ${deepSunk ? 'translateY(300px)' : isSunk ? 'translateY(140px)' : ''}`,
+            transition: deepSunk ? 'transform 4s ease-in' : 'transform 1.5s ease-in-out',
+            transformOrigin: 'center bottom',
+          }}>
             {/* Bob */}
             <div className="animate-bob-simple">
               {/* Responsive ship container — scales down on narrow screens */}
@@ -320,14 +423,18 @@ export default function ShipDashboard() {
 
                 {/* Workers — absolute over SVG, positions in % so they scale with the container */}
                 {WORKERS.map((w, i) => (
-                  <div key={i} className={workerClass} style={{
-                    position: 'absolute', left: w.x, top: w.y,
-                    width: '4%', height: 0, paddingBottom: '4%',
-                    borderRadius: '50%', background: w.color,
-                    transform: 'translate(-50%, -50%)',
-                    boxShadow: `0 0 6px ${w.color}80`,
-                    animationDelay: `${i * 0.12}s`,
-                  }} />
+                  <div key={i}
+                    className={sinkingWorkers ? 'animate-worker-sink' : workerClass}
+                    style={{
+                      position: 'absolute', left: w.x, top: w.y,
+                      width: '4%', height: 0, paddingBottom: '4%',
+                      borderRadius: '50%', background: w.color,
+                      transform: 'translate(-50%, -50%)',
+                      boxShadow: `0 0 6px ${w.color}80`,
+                      animationDelay: sinkingWorkers ? `${i * 0.5}s` : `${i * 0.12}s`,
+                      animationFillMode: sinkingWorkers ? 'forwards' : undefined,
+                    }}
+                  />
                 ))}
               </div>
             </div>
