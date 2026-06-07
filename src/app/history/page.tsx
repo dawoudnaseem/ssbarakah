@@ -150,13 +150,13 @@ export default function HistoryPage() {
   }
 
   if (fetchError) return (
-    <div style={{ minHeight: '100vh', background: '#061826', paddingTop: '80px' }}>
+    <div style={{ minHeight: '100vh', background: '#061826', paddingTop: '56px' }}>
       <p style={{ color: '#DC2626', textAlign: 'center', paddingTop: '60px' }}>{fetchError}</p>
     </div>
   )
 
   if (loading) return (
-    <div style={{ minHeight: '100vh', background: '#061826', paddingTop: '80px' }}>
+    <div style={{ minHeight: '100vh', background: '#061826', paddingTop: '56px' }}>
       <p style={{ color: '#9DD8F7', textAlign: 'center', paddingTop: '60px' }}>Loading voyage records…</p>
     </div>
   )
@@ -324,7 +324,7 @@ export default function HistoryPage() {
   }
 
   return (
-    <div style={{ minHeight: '100vh', background: '#061826', paddingTop: '80px' }}>
+    <div style={{ minHeight: '100vh', background: '#061826', paddingTop: '56px' }}>
       <div style={{ maxWidth: '860px', margin: '0 auto', padding: '32px 24px' }}>
         <h1 style={{ color: '#9DD8F7', fontSize: '22px', fontWeight: 800, letterSpacing: '0.05em', textTransform: 'uppercase', marginBottom: '4px' }}>
           📜 Voyage History
