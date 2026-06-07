@@ -357,7 +357,7 @@ export default function TeammatePage({ params }: { params: Promise<{ teammateId:
     <div style={{ background: '#020810', color: '#F2FBFF' }}>
 
       {/* ── Surface section: arctic gradient ── */}
-      <div className="px-4 py-6" style={{ background: 'linear-gradient(180deg, #061826 0%, #0B3558 100%)' }}>
+      <div className="px-4 pt-20 pb-6" style={{ background: 'linear-gradient(180deg, #061826 0%, #0B3558 100%)' }}>
         <div className="max-w-2xl mx-auto flex flex-col gap-6">
 
           {/* ── Header ── */}

@@ -812,3 +812,56 @@ Several rounds of iteration on `src/components/pomodoro/PomodoroTimer.tsx` after
 **Text centering in SVG:**
 - Used `dominantBaseline="middle"` so `y` is the true visual midpoint of each text element.
 - Final positions (user-adjusted): number at `CY + 4`, label at `CY + 24` — user iterated to find the best visual balance.
+
+---
+
+## ✅ Visual Fixes — Teammate Dashboard Background Fade & Nav Menu Polish (2026-06-07)
+
+### Teammate dashboard — deep-waters background fade
+
+**Problem:** The teammate dashboard (`src/app/teammate/[teammateId]/page.tsx`) had a single `linear-gradient(#061826 → #0B3558)` applied across the entire page, so the background looked flat and inconsistent with the main Ship page (`/`).
+
+**Fix:** Split the page into three visual zones matching the Ship page exactly:
+
+1. **Surface section** — `linear-gradient(180deg, #061826 0%, #0B3558 100%)` wraps the header, stats row, heatmap, and Pomodoro timer. Top padding changed to `pt-20` (80px) so content clears the fixed navbar.
+2. **Abyss transition** — 100px `div` with `linear-gradient(180deg, #0B3558 0%, #020810 100%)` — the "going underwater" moment.
+3. **Deep waters section** — `background: #020810` (near-black) for the tasks list, action buttons, and forms. Opens with the same `— deep waters —` divider used in the Ship page.
+
+The outer wrapper is `background: #020810` so there is no white flash if content overflows.
+
+**Files changed:** `src/app/teammate/[teammateId]/page.tsx`
+
+---
+
+### Navbar — countdown visible through dropdown / z-index fix
+
+**Problem:** The countdown chip (`fixed`, `z-40`) in `src/app/page.tsx` was bleeding through the avatar dropdown menu and (originally) the mobile drawer.
+
+**Root cause:** The nav bar was `z-30`. A child's `z-index` is scoped to its parent's stacking context, so the dropdown's inline `z-index: 50` had no effect against the `z-40` countdown which lived in a different stacking context.
+
+**Fix:** Raised the `<nav>` itself from `z-30` to `z-50` in `src/components/NavBar.tsx`. Now the entire nav stacking context (bar + dropdown + drawer) sits above the countdown.
+
+---
+
+### Navbar menus — icy frosted-glass appearance
+
+**Problem:** Both the avatar dropdown and the mobile drawer had opaque dark backgrounds (`rgba(6,24,38,0.95/0.97)`) that looked heavy and out of theme.
+
+**Fix:** Both menus restyled to a translucent icy look:
+- `background: rgba(14,55,90,0.82)` — dark navy-blue at 82% opacity
+- `backdropFilter: blur(24px) saturate(1.4)` + `WebkitBackdropFilter` — frosted-glass blur
+- `border: 1px solid rgba(157,216,247,0.30)` — ice-blue edge
+- Dropdown: `boxShadow: '0 8px 32px rgba(0,0,0,0.5), inset 0 1px 0 rgba(157,216,247,0.15)'`
+- Drawer: matching bottom border + inset shadow
+
+**Files changed:** `src/components/NavBar.tsx`
+
+---
+
+### Teammate dashboard — hidden logout button above stats row
+
+**Problem:** The page header (name + logout button) was rendering at the very top of the surface section with only `py-6` (24px) top padding, which placed it directly behind the 56px fixed navbar. The button was invisible but clickable — a phantom logout trigger.
+
+**Fix:** Changed `py-6` → `pt-20 pb-6` on the surface section `div` so the header clears the navbar with comfortable breathing room.
+
+**Files changed:** `src/app/teammate/[teammateId]/page.tsx`
