@@ -739,6 +739,8 @@ Extracted three pure helper functions from `src/app/history/page.tsx` into a sha
 - Replaced the "Heatmap coming in Task 14" placeholder with the real 20×3 CSS grid using `buildHeatmapCells(teammate?.id ?? '', heatmapStats)`
 - Uses `teammate?.id ?? ''` (optional chaining) consistent with rest of file; empty string produces all-ghost cells if somehow null
 
+**Post-completion fix:** Heatmap grid switched from fixed `14px` cells to `grid-template-columns: repeat(20, 1fr)` + `aspect-ratio: 1` per cell so the heatmap fills the full width of its card. History page heatmap unchanged (cell sizes are defined in each page's JSX, not in the shared lib).
+
 **Tests:** 60 passing, `npx tsc --noEmit` clean.
 
 **Next task:** Task 15 — Pomodoro Timer
