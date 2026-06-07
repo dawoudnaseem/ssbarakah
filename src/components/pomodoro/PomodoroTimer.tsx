@@ -73,25 +73,33 @@ export default function PomodoroTimer() {
     endTimeRef.current = null
   }
 
-  // Breathing phase: 0=breathe-in, 1=hold, 2=breathe-out, 3=hold
+  // Breathing phase: 0=breathe-in, 1=hold-big, 2=breathe-out, 3=hold-small
   const PHASE_LABELS = ['Breathe in', 'Hold', 'Breathe out', 'Hold']
   const [breathPhase, setBreathPhase] = useState(0)
+  // breathReady delays the first scale transition by one frame so the circle
+  // renders small before growing on phase 0 (breathe in)
+  const [breathReady, setBreathReady] = useState(false)
 
   useEffect(() => {
     if (!showBreathing) {
       setBreathPhase(0)
+      setBreathReady(false)
       return
     }
+    // Let the browser paint the small circle first, then start growing
+    const raf = requestAnimationFrame(() => setBreathReady(true))
     const t = setInterval(() => {
       setBreathPhase(p => (p + 1) % 4)
     }, 5000)
-    return () => clearInterval(t)
+    return () => { cancelAnimationFrame(raf); clearInterval(t) }
   }, [showBreathing])
 
   const mm = String(Math.floor(secondsLeft / 60)).padStart(2, '0')
   const ss = String(secondsLeft % 60).padStart(2, '0')
 
-  const circleExpanded = breathPhase === 0 || breathPhase === 1
+  // Circle is large during hold-big (phase 1) and after breathe-in completes.
+  // Phase 0 transitions FROM small TO large (needs breathReady to start the transition).
+  const circleExpanded = breathReady && (breathPhase === 0 || breathPhase === 1)
 
   return (
     <div className="rounded-xl p-4" style={{ background: 'rgba(11,53,88,0.4)', border: '1px solid rgba(157,216,247,0.1)' }}>
@@ -180,31 +188,75 @@ export default function PomodoroTimer() {
           className="fixed inset-0 flex flex-col items-center justify-center z-50"
           style={{ background: '#020810' }}
         >
-          {/* Animated circle with scaling content inside */}
-          <div
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              flexDirection: 'column',
-              gap: '8px',
-              width: '260px',
-              height: '260px',
-              borderRadius: '50%',
-              background: 'rgba(157,216,247,0.15)',
-              border: '2px solid rgba(157,216,247,0.4)',
-              transform: circleExpanded ? 'scale(1)' : 'scale(0.55)',
-              transition: breathPhase === 0 || breathPhase === 2 ? 'transform 5s ease-in-out' : 'transform 0.3s ease',
-            }}
-          >
-            {/* Small fixed-size timer — sits inside the circle but outside the scale transform */}
-            <span style={{ fontSize: '14px', color: 'rgba(157,216,247,0.7)', fontWeight: 'bold', letterSpacing: '2px' }}>
-              {mm}:{ss}
-            </span>
-            {/* Instruction text — scales with circle */}
-            <span style={{ fontSize: '18px', color: '#F2FBFF', fontWeight: '600', textAlign: 'center', padding: '0 16px' }}>
-              {PHASE_LABELS[breathPhase]}
-            </span>
+          {/* Outer wrapper handles scale transform — children stay unscaled */}
+          <div style={{ position: 'relative' }}>
+            {/* Animated ice circle */}
+            <div
+              style={{
+                width: '260px',
+                height: '260px',
+                borderRadius: '50%',
+                // Translucent ice: layered radial gradient
+                background: 'radial-gradient(circle at 38% 32%, rgba(220,245,255,0.28) 0%, rgba(157,216,247,0.14) 45%, rgba(80,160,210,0.08) 100%)',
+                // Shiny blue edge: bright border + outer glow + inner highlight
+                border: '2px solid rgba(200,238,255,0.9)',
+                boxShadow: '0 0 28px rgba(157,216,247,0.55), 0 0 60px rgba(100,180,230,0.2), inset 0 0 30px rgba(200,240,255,0.08), inset 2px 2px 8px rgba(255,255,255,0.18)',
+                backdropFilter: 'blur(8px)',
+                transform: circleExpanded ? 'scale(1)' : 'scale(0.55)',
+                transition: breathPhase === 0 || breathPhase === 2 ? 'transform 5s ease-in-out' : 'transform 0.3s ease',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                flexDirection: 'column',
+                gap: '8px',
+              }}
+            >
+              {/* Small fixed timer inside circle — does NOT scale */}
+              <span style={{ fontSize: '14px', color: 'rgba(200,238,255,0.8)', fontWeight: 'bold', letterSpacing: '2px' }}>
+                {mm}:{ss}
+              </span>
+              {/* Instruction text — scales with circle */}
+              <span style={{ fontSize: '18px', color: '#F2FBFF', fontWeight: '600', textAlign: 'center', padding: '0 24px' }}>
+                {PHASE_LABELS[breathPhase]}
+              </span>
+            </div>
+
+            {/* Icicles hanging below the circle */}
+            <div
+              style={{
+                position: 'absolute',
+                bottom: '-38px',
+                left: '50%',
+                transform: 'translateX(-50%)',
+                pointerEvents: 'none',
+              }}
+            >
+              <svg viewBox="0 0 200 44" width="160px" height="44px" aria-hidden="true">
+                {/* 7 icicles of varying widths and heights, centred under the circle */}
+                {([
+                  [8,  12, 38],
+                  [28, 9,  26],
+                  [44, 13, 42],
+                  [64, 10, 30],
+                  [82, 14, 44],
+                  [104, 9, 24],
+                  [120, 12, 36],
+                ] as [number, number, number][]).map(([x, w, h], i) => (
+                  <g key={i}>
+                    <polygon
+                      points={`${x},0 ${x + w},0 ${x + w / 2},${h}`}
+                      fill="rgba(200,238,255,0.45)"
+                    />
+                    <line
+                      x1={x + 2} y1={0}
+                      x2={x + w / 2 - 1} y2={h - 5}
+                      stroke="rgba(255,255,255,0.35)"
+                      strokeWidth="1.2"
+                    />
+                  </g>
+                ))}
+              </svg>
+            </div>
           </div>
 
           {/* Fixed stop button */}
