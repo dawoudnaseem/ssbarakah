@@ -135,16 +135,6 @@ html, body {
 
 /* ─── Daily intro crash animation ─────────────────────────────────────────── */
 
-@keyframes ship-sail-in {
-  from { transform: translateX(-110vw); }
-  to   { transform: translateX(0); }
-}
-
-@keyframes iceberg-slam {
-  from { transform: translateX(110vw); }
-  to   { transform: translateX(0); }
-}
-
 @keyframes pulse-red {
   0%, 100% { opacity: 0; }
   50%       { opacity: 1; }
@@ -159,14 +149,6 @@ html, body {
 @keyframes intro-fade-out {
   from { opacity: 1; }
   to   { opacity: 0; }
-}
-
-.animate-ship-sail-in {
-  animation: ship-sail-in 2s ease-out forwards;
-}
-
-.animate-iceberg-slam {
-  animation: iceberg-slam 0.5s ease-in forwards;
 }
 
 .animate-screen-shake {

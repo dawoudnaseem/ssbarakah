@@ -124,6 +124,9 @@ export default function IntroAnimation({ onDone }: { onDone: () => void }) {
   return (
     <div
       className={sceneClass}
+      role="dialog"
+      aria-label="Ship intro animation"
+      aria-modal="true"
       style={{
         position: 'fixed',
         inset: 0,
@@ -131,13 +134,12 @@ export default function IntroAnimation({ onDone }: { onDone: () => void }) {
         overflow: 'hidden',
         background: 'linear-gradient(180deg, #020810 0%, #061826 40%, #0B3558 100%)',
       }}
-      aria-hidden
     >
       {/* Alarm audio — not visible */}
       <audio ref={audioRef} src="/sounds/alarm.mp3" preload="auto" />
 
       {/* Stars */}
-      <div className="absolute inset-0 pointer-events-none">
+      <div className="absolute inset-0 pointer-events-none" aria-hidden="true">
         {INTRO_STARS.map((s, i) => (
           <div
             key={i}
@@ -158,6 +160,7 @@ export default function IntroAnimation({ onDone }: { onDone: () => void }) {
       <div
         className="absolute bottom-0 left-0 right-0 pointer-events-none wave-back"
         style={{ height: '30%', zIndex: 1, background: '#041220' }}
+        aria-hidden="true"
       />
 
       {/* Red alarm overlay */}
@@ -177,6 +180,7 @@ export default function IntroAnimation({ onDone }: { onDone: () => void }) {
       {/* Iceberg — slams in from the right */}
       <div
         className="absolute pointer-events-none"
+        aria-hidden="true"
         style={{
           bottom: '24%',
           right: '2%',
@@ -197,6 +201,7 @@ export default function IntroAnimation({ onDone }: { onDone: () => void }) {
       {/* Ship — centering wrapper (sail-in transform lives here) */}
       <div
         className="absolute pointer-events-none"
+        aria-hidden="true"
         style={{
           left: '50%',
           bottom: '24%',
@@ -320,11 +325,11 @@ export default function IntroAnimation({ onDone }: { onDone: () => void }) {
         </div>
       </div>
 
-      {/* Skip button — fixed bottom-right, always present */}
+      {/* Skip button — absolute bottom-right within the fixed overlay */}
       <button
         onClick={handleSkip}
         style={{
-          position: 'fixed',
+          position: 'absolute',
           bottom: '24px',
           right: '24px',
           zIndex: 100,

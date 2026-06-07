@@ -224,21 +224,15 @@ export default function ShipDashboard() {
     setFailureOverlayDismissed(true)
   }
 
-  if (loading) {
-    return (
-      <main className="min-h-screen flex items-center justify-center" style={{ background: '#061826' }}>
-        {!introPlayed && <IntroAnimation onDone={() => setIntroPlayed(true)} />}
-        <p style={{ color: '#9DD8F7' }}>Loading mission status…</p>
-      </main>
-    )
-  }
-
   return (
+    <>
+      {!introPlayed && <IntroAnimation onDone={() => setIntroPlayed(true)} />}
+      {loading ? (
+        <main className="min-h-screen flex items-center justify-center" style={{ background: '#061826' }}>
+          <p style={{ color: '#9DD8F7' }}>Loading mission status…</p>
+        </main>
+      ) : (
     <div style={{ background: '#020810' }}>
-
-      {!introPlayed && (
-        <IntroAnimation onDone={() => setIntroPlayed(true)} />
-      )}
 
 
       {/* ════════════════════════════════════════════════════════════
@@ -547,6 +541,8 @@ export default function ShipDashboard() {
       </div>
 
     </div>
+      )}
+    </>
   )
 }
 
