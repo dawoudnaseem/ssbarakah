@@ -215,11 +215,11 @@ export default function PomodoroTimer() {
                 onTouchStart={() => setDragging(true)}
               />
               {/* Centre: selected minutes */}
-              <text x={CX} y={CY - 24} textAnchor="middle" dominantBaseline="middle"
+              <text x={CX} y={CY - 4} textAnchor="middle" dominantBaseline="middle"
                 fill="#F2FBFF" fontSize="38" fontWeight="700" fontFamily="monospace">
                 {focusMins}
               </text>
-              <text x={CX} y={CY + 4} textAnchor="middle" dominantBaseline="middle"
+              <text x={CX} y={CY + 24} textAnchor="middle" dominantBaseline="middle"
                 fill="rgba(157,216,247,0.5)" fontSize="11" letterSpacing="1">
                 minutes
               </text>
@@ -239,11 +239,11 @@ export default function PomodoroTimer() {
                 style={{ transition: 'stroke-dashoffset 1s linear' }}
               />
               {/* Centre: MM:SS + mode */}
-              <text x={CX} y={CY - 24} textAnchor="middle" dominantBaseline="middle"
+              <text x={CX} y={CY - 4} textAnchor="middle" dominantBaseline="middle"
                 fill="#F2FBFF" fontSize="34" fontWeight="700" fontFamily="monospace" letterSpacing="2">
                 {mm}:{ss}
               </text>
-              <text x={CX} y={CY + 4} textAnchor="middle" dominantBaseline="middle"
+              <text x={CX} y={CY + 24} textAnchor="middle" dominantBaseline="middle"
                 fill={mode === 'focus' ? '#9DD8F7' : '#22C55E'} fontSize="11" fontWeight="600" letterSpacing="2">
                 {mode === 'focus' ? 'FOCUS' : 'BREAK'}
               </text>
