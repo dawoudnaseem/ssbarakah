@@ -1,7 +1,6 @@
 'use client'
 
 import { useEffect, useRef, useState } from 'react'
-import { todayString } from '@/lib/dateUtils'
 
 // ─── Pre-computed stars (no Math.random — hydration-safe) ─────────────────────
 const INTRO_STARS = [
@@ -73,11 +72,6 @@ export default function IntroAnimation({ onDone }: { onDone: () => void }) {
     if (doneRef.current) return
     doneRef.current = true
     clearAllTimeouts()
-    try {
-      localStorage.setItem('ss_barakah_last_intro', todayString())
-    } catch {
-      /* localStorage unavailable — fail silently */
-    }
     onDone()
   }
 
