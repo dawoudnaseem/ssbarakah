@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState, useCallback, useRef } from 'react'
+import { useEffect, useState, useCallback, useRef, useMemo } from 'react'
 import { supabase } from '@/lib/supabaseClient'
 import { todayString, yesterdayString } from '@/lib/dateUtils'
 import { finalizeDay } from '@/lib/finalization'
@@ -10,6 +10,7 @@ import type { LeaderboardEntry, RecentCompletion } from '@/types/leaderboard'
 import Leaderboard from '@/components/leaderboard/Leaderboard'
 import RecentRepairsFeed from '@/components/leaderboard/RecentRepairsFeed'
 import BadgeDisplay from '@/components/leaderboard/BadgeDisplay'
+import SunkOverlay from '@/components/SunkOverlay'
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -64,7 +65,7 @@ function useCountdown() {
 // ─── Page ─────────────────────────────────────────────────────────────────────
 
 export default function ShipDashboard() {
-  const today = todayString()
+  const today = useMemo(() => todayString(), [])
   const countdown = useCountdown()
 
   const [teammates, setTeammates] = useState<Teammate[]>([])
@@ -168,20 +169,21 @@ export default function ShipDashboard() {
     }
   }, [today])
 
-  // Trigger sinking animation exactly once when isSunk becomes true
-  const isSunk = todayResult?.outcome === 'sunk'
+  // Trigger sinking animation exactly once when todayResult becomes sunk
   useEffect(() => {
+    const isSunk = todayResult?.outcome === 'sunk'
     if (isSunk && !sinkTriggeredRef.current) {
       sinkTriggeredRef.current = true
       setSinkingWorkers(true)
       const timer = setTimeout(() => setDeepSunk(true), 2000)
       return () => clearTimeout(timer)
     }
-  }, [isSunk])
+  }, [todayResult, today])
 
   const requiredTasks = allTasks.filter(t => t.is_required)
   const hasNoRequiredTasks = requiredTasks.length === 0
   const progress = calculateTeamProgress(allTasks)
+  const isSunk = todayResult?.outcome === 'sunk'
   const status = getMissionStatus(progress, isSunk)
   const statusColor = STATUS_COLORS[status]
   const shipTilt = isSunk ? -30 : -(15 - (progress / 100) * 15)
@@ -193,18 +195,18 @@ export default function ShipDashboard() {
   const chadEntry = leaderboard.find(e => e.teammate.current_chad)
   const chudEntry = leaderboard.find(e => e.teammate.current_chud)
 
+  function handleDismissOverlay() {
+    const key = `ss_barakah_sunk_dismissed_${today}`
+    sessionStorage.setItem(key, '1')
+    setFailureOverlayDismissed(true)
+  }
+
   if (loading) {
     return (
       <main className="min-h-screen flex items-center justify-center" style={{ background: '#061826' }}>
         <p style={{ color: '#9DD8F7' }}>Loading mission status…</p>
       </main>
     )
-  }
-
-  function handleDismissOverlay() {
-    const key = `ss_barakah_sunk_dismissed_${today}`
-    sessionStorage.setItem(key, '1')
-    setFailureOverlayDismissed(true)
   }
 
   return (
@@ -214,69 +216,11 @@ export default function ShipDashboard() {
           FAILURE OVERLAY — full-screen, above progress bar (z:60)
       ════════════════════════════════════════════════════════════ */}
       {isSunk && !failureOverlayDismissed && (
-        <div
-          className="fixed inset-0 flex flex-col items-center justify-center"
-          style={{
-            zIndex: 60,
-            background: 'rgba(2,8,16,0.92)',
-            opacity: 1,
-            animation: 'overlay-fade-in 1s ease-in 3s both',
-          }}
-        >
-          <div className="max-w-lg w-full mx-4 flex flex-col items-center gap-6 text-center">
-            <h1 className="text-4xl font-bold" style={{ color: '#F2FBFF' }}>
-              🌊 The ship has sunk.
-            </h1>
-
-            {/* Teammates who missed required tasks */}
-            {leaderboard.some(e => e.missedRequired > 0) && (
-              <div className="w-full rounded-2xl p-4"
-                style={{ background: 'rgba(220,38,38,0.1)', border: '1px solid rgba(220,38,38,0.3)' }}>
-                <p className="text-xs font-semibold uppercase tracking-widest mb-3"
-                  style={{ color: 'rgba(157,216,247,0.5)' }}>
-                  Crew who missed required tasks
-                </p>
-                <ul className="flex flex-col gap-1.5">
-                  {leaderboard
-                    .filter(e => e.missedRequired > 0)
-                    .map(e => (
-                      <li key={e.teammate.id} className="text-sm" style={{ color: 'rgba(242,251,255,0.75)' }}>
-                        <strong style={{ color: '#F2FBFF' }}>{e.teammate.name}</strong>
-                        {' '}— {e.missedRequired} required task{e.missedRequired !== 1 ? 's' : ''} missed
-                      </li>
-                    ))
-                  }
-                </ul>
-              </div>
-            )}
-
-            {/* Chud callout */}
-            {chudEntry && (
-              <div className="w-full rounded-2xl p-4"
-                style={{ background: 'rgba(220,38,38,0.15)', border: '2px solid rgba(220,38,38,0.5)' }}>
-                <p className="text-base font-bold" style={{ color: '#DC2626' }}>
-                  💀 Chud of the Day:{' '}
-                  <span style={{ color: '#F2FBFF' }}>{chudEntry.teammate.name}</span>
-                  {' '}— {chudEntry.missedRequired} tasks missed, {chudEntry.points} points
-                </p>
-              </div>
-            )}
-          </div>
-
-          {/* Dismiss button — bottom-right */}
-          <button
-            onClick={handleDismissOverlay}
-            className="fixed bottom-24 right-6 text-xs px-3 py-1.5 rounded-full"
-            style={{
-              background: 'rgba(157,216,247,0.1)',
-              border: '1px solid rgba(157,216,247,0.3)',
-              color: 'rgba(157,216,247,0.7)',
-              cursor: 'pointer',
-            }}
-          >
-            Dismiss ×
-          </button>
-        </div>
+        <SunkOverlay
+          leaderboard={leaderboard}
+          chudEntry={chudEntry}
+          onDismiss={handleDismissOverlay}
+        />
       )}
 
       {/* ════════════════════════════════════════════════════════════
@@ -432,7 +376,6 @@ export default function ShipDashboard() {
                       transform: 'translate(-50%, -50%)',
                       boxShadow: `0 0 6px ${w.color}80`,
                       animationDelay: sinkingWorkers ? `${i * 0.5}s` : `${i * 0.12}s`,
-                      animationFillMode: sinkingWorkers ? 'forwards' : undefined,
                     }}
                   />
                 ))}
