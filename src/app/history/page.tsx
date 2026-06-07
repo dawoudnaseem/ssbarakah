@@ -38,6 +38,40 @@ interface CrewRecord {
   chudCount: number
 }
 
+function heatmapColor(points: number, missedRequired: number): string {
+  if (missedRequired > 0) return 'rgba(220,38,38,0.5)'
+  if (points === 0)  return 'rgba(255,255,255,0.05)'
+  if (points < 10)  return '#7C3200'
+  if (points < 20)  return '#B84A00'
+  if (points < 35)  return '#F97316'
+  return '#FBBF24'
+}
+
+function buildHeatmapCells(
+  teammateId: string,
+  stats: TeammateDailyStat[]
+): { color: string; date: string }[] {
+  const byDate: Record<string, TeammateDailyStat> = {}
+  for (const s of stats) {
+    if (s.teammate_id === teammateId) byDate[s.stat_date] = s
+  }
+
+  const cells: { color: string; date: string }[] = []
+  for (let i = 59; i >= 0; i--) {
+    const d = new Date()
+    d.setDate(d.getDate() - i)
+    const dateStr = d.toISOString().split('T')[0]
+    const stat = byDate[dateStr]
+    cells.push({
+      date: dateStr,
+      color: stat
+        ? heatmapColor(stat.points_earned, stat.missed_required_tasks)
+        : 'rgba(255,255,255,0.05)',
+    })
+  }
+  return cells
+}
+
 function buildCrewRecords(
   teammates: Teammate[],
   stats: TeammateDailyStat[],
@@ -184,7 +218,17 @@ export default function HistoryPage() {
                     </div>
                   </div>
                 </div>
-                {/* Heatmap placeholder — added in Task 4 */}
+                {/* Heatmap */}
+                <div>
+                  <p style={{ fontSize: '10px', color: 'rgba(157,216,247,0.3)', marginBottom: '5px' }}>
+                    Last 60 days — darker = low pts · gold = high pts · red = missed required
+                  </p>
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(20, 14px)', gridTemplateRows: 'repeat(3, 14px)', gap: '3px', width: 'fit-content' }}>
+                    {buildHeatmapCells(rec.teammate.id, data!.stats).map(cell => (
+                      <div key={cell.date} style={{ width: '14px', height: '14px', borderRadius: '3px', background: cell.color }} />
+                    ))}
+                  </div>
+                </div>
               </div>
             )
           })}
