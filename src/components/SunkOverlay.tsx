@@ -11,6 +11,9 @@ interface SunkOverlayProps {
 export default function SunkOverlay({ leaderboard, chudEntry, onDismiss }: SunkOverlayProps) {
   return (
     <div
+      role="dialog"
+      aria-modal="true"
+      aria-label="Ship has sunk"
       className="fixed inset-0 flex flex-col items-center justify-center"
       style={{
         zIndex: 60,
@@ -63,6 +66,7 @@ export default function SunkOverlay({ leaderboard, chudEntry, onDismiss }: SunkO
         onClick={onDismiss}
         className="fixed bottom-24 right-6 text-xs px-3 py-1.5 rounded-full"
         style={{
+          zIndex: 65,
           background: 'rgba(157,216,247,0.1)',
           border: '1px solid rgba(157,216,247,0.3)',
           color: 'rgba(157,216,247,0.7)',

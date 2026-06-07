@@ -195,7 +195,7 @@ export default function ShipDashboard() {
       const timer = setTimeout(() => setDeepSunk(true), 2000)
       return () => clearTimeout(timer)
     }
-  }, [todayResult, today])
+  }, [todayResult])
 
   const requiredTasks = allTasks.filter(t => t.is_required)
   const hasNoRequiredTasks = requiredTasks.length === 0
