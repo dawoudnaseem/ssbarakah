@@ -4,6 +4,18 @@
 
 ---
 
+## ⏭️ Next Task: Task 14 — Heatmap on Teammate Dashboard
+
+**File to modify:** `src/app/teammate/[teammateId]/page.tsx`
+
+Add a personal 20×3 heatmap (same design as the one in `/history`) to each teammate's dashboard. Source data: `teammate_daily_stats` filtered to the logged-in teammate only.
+
+Full task spec is in `docs/todo.md` under "Task 14". Heatmap helper code (colours, `buildHeatmapCells` logic) already exists in `src/app/history/page.tsx` and can be referenced or extracted.
+
+**Before starting:** Run the brainstorming skill — this is a UI feature addition and requires design approval before coding.
+
+---
+
 ## How to Start a New Session
 
 Read these files in this order:

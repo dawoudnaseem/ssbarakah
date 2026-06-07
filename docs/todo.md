@@ -280,104 +280,104 @@
 
 ---
 
-## Task 10 — Chad/Chud Badge Logic
+## ✅ Task 10 — Chad/Chud Badge Logic
 
 ### 10.1 Implement Chad calculation
-- [ ] `calculateChad`: teammate with highest `points_earned` for the day
-- [ ] Handle ties: show first by teammate ID if needed
+- [x] `calculateChad`: teammate with highest `points_earned` for the day
+- [x] Handle ties: show first by teammate ID if needed
 
 ### 10.2 Implement Chud calculation
-- [ ] `calculateChud`: only eligible if `missed_required_tasks > 0`
-- [ ] Among eligible: lowest points first; tiebreak by most missed tasks; tiebreak by teammate ID
-- [ ] If nobody failed: Chud = null
+- [x] `calculateChud`: only eligible if `missed_required_tasks > 0`
+- [x] Among eligible: lowest points first; tiebreak by most missed tasks; tiebreak by teammate ID
+- [x] If nobody failed: Chud = null
 
 ### 10.3 Badge display components
-- [ ] Create `src/components/leaderboard/BadgeDisplay.tsx`
-- [ ] Show "Chad of the Day: [name]" on dashboard
-- [ ] Show "Chud of the Day: [name]" or "Chud: None. Everyone completed their tasks."
+- [x] Create `src/components/leaderboard/BadgeDisplay.tsx`
+- [x] Show "Chad of the Day: [name]" on dashboard
+- [x] Show "Chud of the Day: [name]" or "Chud: None. Everyone completed their tasks."
 
 ### 10.4 Persist current badge state
-- [ ] Update `current_chad` and `current_chud` on `teammates` table after finalization
-- [ ] Badges persist on dashboard until next finalization
+- [x] Update `current_chad` and `current_chud` on `teammates` table after finalization
+- [x] Badges persist on dashboard until next finalization
 
 ### 10.5 Update handoff.md
-- [ ] Append summary of Task 10 to `handoff.md`
+- [x] Append summary of Task 10 to `handoff.md`
 
 ---
 
-## Task 11 — Admin Dashboard
+## ✅ Task 11 — Admin Dashboard
 
 ### 11.1 Build admin code gate
-- [ ] Create `src/components/admin/AdminCodeGate.tsx`
-- [ ] Show code input before revealing admin dashboard
-- [ ] Validate using `validateAdminCode()` from `src/lib/auth.ts`
-- [ ] Store admin access in `sessionStorage` for current session only
+- [x] Create `src/components/admin/AdminCodeGate.tsx`
+- [x] Show code input before revealing admin dashboard
+- [x] Validate using `validateAdminCode()` from `src/lib/auth.ts`
+- [x] Store admin access in `sessionStorage` for current session only
 
 ### 11.2 Teammate management UI
-- [ ] Create `src/components/admin/TeammateManager.tsx`
-- [ ] Add teammate (name, password)
-- [ ] Remove teammate (soft-delete via `is_active = false` or hard delete)
-- [ ] Edit teammate name
-- [ ] Change teammate password
-- [ ] Activate/deactivate teammate toggle
+- [x] Create `src/components/admin/TeammateManager.tsx`
+- [x] Add teammate (name, password)
+- [x] Remove teammate (soft-delete via `is_active = false` or hard delete)
+- [x] Edit teammate name
+- [x] Change teammate password
+- [x] Activate/deactivate teammate toggle
 
 ### 11.3 Preset task management UI
-- [ ] Create `src/components/admin/PresetTaskManager.tsx`
-- [ ] Create / edit / delete preset task
-- [ ] Set Islamic category flag, point values, repeatable rules
+- [x] Create `src/components/admin/PresetTaskManager.tsx` (as `MissionsSection.tsx`)
+- [x] Create / edit / delete preset task
+- [x] Set Islamic category flag, point values, repeatable rules
 
 ### 11.4 Team status view in admin
-- [ ] Show today's team completion status
-- [ ] List all teammates and their current tasks + completion state
+- [x] Show today's team completion status
+- [x] List all teammates and their current tasks + completion state
 
 ### 11.5 Manual day finalization trigger
-- [ ] Button to manually run `finalizeDay()` from admin dashboard
-- [ ] Confirmation prompt before triggering
+- [x] Button to manually run `finalizeDay()` from admin dashboard
+- [x] Confirmation prompt before triggering
 
 ### 11.6 Update handoff.md
-- [ ] Append summary of Task 11 to `handoff.md`
+- [x] Append summary of Task 11 to `handoff.md`
 
 ---
 
-## Task 12 — Daily Finalization
+## ✅ Task 12 — Daily Finalization
 
 ### 12.1 Implement `finalizeDay` in `finalization.ts`
-- [ ] Steps 1–11: get teammates, calculate results, save daily_results, save teammate_daily_stats, update badges, generate next-day recurring tasks
+- [x] Steps 1–11: get teammates, calculate results, save daily_results, save teammate_daily_stats, update badges, generate next-day recurring tasks
 
 ### 12.2 Auto-trigger finalization on app open
-- [ ] Check if yesterday has been finalized; if not, call `finalizeDay(yesterday)`
+- [x] Check if yesterday has been finalized; if not, call `finalizeDay(yesterday)`
 
 ### 12.3 Admin manual trigger
-- [ ] Wire "Manually trigger day finalization" button in admin dashboard to `finalizeDay`
+- [x] Wire "Manually trigger day finalization" button in admin dashboard to `finalizeDay`
 
 ### 12.4 Update handoff.md
-- [ ] Append summary of Task 12 to `handoff.md`
+- [x] Append summary of Task 12 to `handoff.md`
 
 ---
 
-## Task 13 — History/Stats Page
+## ✅ Task 13 — History/Stats Page
 
 Design approved 2026-06-06. Spec: `docs/superpowers/specs/2026-06-06-task-13-history-stats-page.md`
 
 Single file: `src/app/history/page.tsx` — three sections:
 
 ### 13.1 Fleet Summary
-- [ ] 4-chip grid: Days Survived, Current Streak 🔥, Days Sunk, Survival Rate
-- [ ] Streak = consecutive survived days going backwards from latest finalized day
+- [x] 4-chip grid: Days Survived, Current Streak 🔥, Days Sunk, Survival Rate
+- [x] Streak = consecutive survived days going backwards from latest finalized day
 
 ### 13.2 Crew All-Time Records
-- [ ] One card per active teammate, sorted by total all-time points desc
-- [ ] Large avatar (56px), name (22px), Chad/Chud count pills (13px)
-- [ ] Total Points + Tasks Done at 36px bold; top scorer amber, others ice-blue
-- [ ] 20×3 heatmap (60 cells, 14×14px) — warm colour scale, red = missed required
+- [x] One card per active teammate, sorted by total all-time points desc
+- [x] Large avatar (56px), name (22px), Chad/Chud count pills (13px)
+- [x] Total Points + Tasks Done at 36px bold; top scorer amber, others ice-blue
+- [x] 20×3 heatmap (60 cells, 14×14px) — warm colour scale, red = missed required
 
 ### 13.3 Daily Log
-- [ ] One card per `daily_results` row, newest first
-- [ ] Outcome icon (⛵/🌊), date, title, Chad/Chud/crew chips, completion %
-- [ ] Empty state: "No voyages recorded yet."
+- [x] One card per `daily_results` row, newest first
+- [x] Outcome icon (⛵/🌊), date, title, Chad/Chud/crew chips, completion %
+- [x] Empty state: "No voyages recorded yet."
 
 ### 13.4 Update handoff.md
-- [ ] Append summary of Task 13 to `handoff.md`
+- [x] Append summary of Task 13 to `handoff.md`
 
 ---
 
