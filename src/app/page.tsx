@@ -78,7 +78,6 @@ export default function ShipDashboard() {
     if (lastIntro !== todayString()) setIntroPlayed(false)
   }, [])
 
-  const [teammates, setTeammates] = useState<Teammate[]>([])
   const [allTasks, setAllTasks] = useState<DailyTask[]>([])
   const [todayResult, setTodayResult] = useState<DailyResult | null>(null)
   const [leaderboard, setLeaderboard] = useState<LeaderboardEntry[]>([])
@@ -134,22 +133,23 @@ export default function ShipDashboard() {
       teammate_id: string; daily_task_id: string; task_date: string
     }>
 
-    setTeammates(tms)
     setAllTasks(tasks)
     setTodayResult(result)
 
     const board: LeaderboardEntry[] = tms.map(tm => {
       const myTasks = tasks.filter(t => t.teammate_id === tm.id)
       const required = myTasks.filter(t => t.is_required)
-      const points = completions
+      const earned = completions
         .filter(c => c.teammate_id === tm.id)
         .reduce((sum, c) => sum + c.points_awarded, 0)
+      const missedTasks = required.filter(t => !t.is_completed)
+      const missedPoints = missedTasks.reduce((sum, t) => sum + t.points, 0)
       return {
         teammate: tm,
-        points,
+        points: earned - missedPoints,
         completedRequired: required.filter(t => t.is_completed).length,
         totalRequired: required.length,
-        missedRequired: required.filter(t => !t.is_completed).length,
+        missedRequired: missedTasks.length,
       }
     })
     board.sort((a, b) => {
@@ -416,25 +416,86 @@ export default function ShipDashboard() {
         <div className="absolute bottom-0 left-0 right-0 pointer-events-none wave-back"
           style={{ height: '44%', zIndex: 1 }} aria-hidden />
 
-        {/* Small iceberg — left, base touching waterline */}
+        {/* Small iceberg — left */}
         <div className="absolute pointer-events-none animate-float"
-          style={{ bottom: '28%', left: '5%', zIndex: 2, animationDelay: '0.8s' }} aria-hidden>
-          <svg width="70" height="90" viewBox="0 0 70 90" fill="none">
-            <polygon points="35,0 70,56 0,56" fill="#9DD8F7" opacity="0.75" />
-            <polygon points="35,0 70,56 0,56" fill="white" opacity="0.12" />
-            <polygon points="8,56 62,56 68,90 2,90" fill="#0B3558" opacity="0.95" />
+          style={{ bottom: '8%', left: '3%', zIndex: 2, animationDelay: '0.8s' }} aria-hidden>
+          {/*
+            Waterline at y=80. Above: y=0→80 (dramatic tip). Below: mirrored top × 1.8 elongation.
+            Same x-points, underwater_y = 80 + (80 - above_y) * 1.8
+          */}
+          <svg width="100" height="220" viewBox="0 0 100 220" fill="none">
+            {/* === UNDERWATER — exact mirror of top silhouette, 1.8× elongated, deep blue === */}
+            <path d="M8,80 L3,109 L10,134 L18,120 L26,156 L34,130 L42,188 L50,159 L58,206 L66,174 L72,152 L80,127 L88,105 L94,87 L92,80 Z"
+              fill="#0D1B35" />
+            <path d="M26,156 L34,130 L42,188 L50,159 L58,206 L66,174 L72,152 L64,168 L58,186 L50,174 L42,196 L36,180 L28,168 Z"
+              fill="#1A1040" opacity="0.7" />
+
+            {/* === ABOVE-WATER TIP === */}
+            <path d="M8,80 L3,64 L10,50 L18,58 L26,38 L34,52 L42,20 L50,36 L58,10 L66,28 L72,40 L80,54 L88,66 L94,76 L92,80 Z"
+              fill="#A8D8EA" />
+            {/* Left lit face */}
+            <path d="M8,80 L3,64 L10,50 L18,58 L26,38 L34,52 L42,20 L50,36 L58,10 L54,26 L46,14 L40,32 L32,20 L24,40 L16,52 L10,66 Z"
+              fill="#D6EEF8" opacity="0.8" />
+            {/* Right shadow face */}
+            <path d="M58,10 L66,28 L72,40 L80,54 L88,66 L94,76 L92,80 L84,70 L78,58 L72,68 L64,50 Z"
+              fill="#6EA8C0" opacity="0.72" />
+            {/* Waterline shelf */}
+            <path d="M8,80 Q28,74 50,76 Q72,74 92,80 Q72,87 50,85 Q28,87 8,80 Z" fill="#C5E8F5" opacity="0.6" />
+            {/* Snow cap */}
+            <path d="M58,10 L64,26 L70,16 L66,28 L58,18 L50,36 L42,20 L46,34 Z" fill="white" opacity="0.88" />
+            <path d="M26,38 L34,52 L42,20 L36,38 Z" fill="white" opacity="0.55" />
+            {/* Facet lines */}
+            <line x1="42" y1="20" x2="38" y2="52" stroke="#8ECFE6" strokeWidth="0.8" opacity="0.5" />
+            <line x1="58" y1="10" x2="54" y2="46" stroke="#8ECFE6" strokeWidth="0.8" opacity="0.5" />
+            <line x1="26" y1="38" x2="22" y2="60" stroke="#8ECFE6" strokeWidth="0.6" opacity="0.4" />
+            <line x1="72" y1="40" x2="68" y2="62" stroke="#5E9AB5" strokeWidth="0.6" opacity="0.4" />
+            {/* Glint */}
+            <ellipse cx="22" cy="50" rx="5" ry="2" fill="white" opacity="0.35" transform="rotate(-15 22 50)" />
           </svg>
         </div>
 
-        {/* Large threatening iceberg — right */}
+        {/* Large threatening iceberg — right. zIndex:1 so ship (zIndex:2) overlaps in front. */}
         <div className="absolute pointer-events-none animate-float"
-          style={{ bottom: '25%', right: '4%', zIndex: 2, animationDelay: '1.8s' }} aria-hidden>
-          <svg width="130" height="200" viewBox="0 0 130 200" fill="none">
-            <polygon points="65,0 130,110 0,110" fill="#9DD8F7" opacity="0.9" />
-            <polygon points="65,0 130,110 0,110" fill="white" opacity="0.18" />
-            <line x1="65" y1="10" x2="75" y2="60" stroke="white" strokeWidth="1" opacity="0.3" />
-            <line x1="55" y1="30" x2="45" y2="80" stroke="white" strokeWidth="0.8" opacity="0.2" />
-            <polygon points="10,110 120,110 128,200 2,200" fill="#0B3558" opacity="0.95" />
+          style={{ bottom: 'calc(28svh - min(600px, 106.15vw) * 1.434)', right: '-20%', zIndex: 1, animationDelay: '1.8s' }} aria-hidden>
+          {/*
+            Waterline at y=220. Above: y=0→220. Below: mirrored × 2 elongation.
+            underwater_y = 220 + (220 - above_y) * 2
+          */}
+          <svg style={{ width: 'min(600px, 106.15vw)', height: 'auto' }} viewBox="0 0 300 650" fill="none">
+            {/* === UNDERWATER — mirror of top × 2 elongation === */}
+            <path d="M14,220 L6,284 L18,348 L32,316 L50,380 L66,348 L82,468 L98,404 L114,580 L130,468 L148,424 L166,380 L184,460 L200,388 L216,340 L228,292 L238,252 L240,220 Z"
+              fill="#0D1B35" />
+            <path d="M82,468 L98,404 L114,580 L130,468 L148,424 L138,454 L128,520 L114,558 L100,520 L90,488 Z"
+              fill="#0A0F28" opacity="0.75" />
+
+            {/* === ABOVE-WATER TIP === */}
+            <path d="M14,220 L6,188 L18,158 L32,172 L50,134 L66,150 L82,96 L98,128 L114,56 L130,96 L148,116 L166,140 L184,110 L200,144 L216,168 L228,192 L238,210 L240,220 Z"
+              fill="#A8D8EA" />
+            {/* Left lit face */}
+            <path d="M14,220 L6,188 L18,158 L32,172 L50,134 L66,150 L82,96 L98,128 L114,56 L108,80 L94,104 L78,74 L68,120 L54,100 L38,130 L26,156 L16,184 Z"
+              fill="#D6EEF8" opacity="0.82" />
+            {/* Right shadow face */}
+            <path d="M114,56 L130,96 L148,116 L166,140 L184,110 L200,144 L216,168 L228,192 L238,210 L240,220 L226,206 L214,180 L202,160 L188,140 L172,166 L156,136 L142,118 L126,84 Z"
+              fill="#6EA8C0" opacity="0.72" />
+            {/* Waterline shelf */}
+            <path d="M14,220 Q70,210 127,213 Q184,210 240,220 Q184,232 127,229 Q70,232 14,220 Z"
+              fill="#C5E8F5" opacity="0.65" />
+            {/* Snow caps */}
+            <path d="M114,56 L124,86 L134,66 L130,96 L114,76 L98,90 L98,128 L108,100 Z"
+              fill="white" opacity="0.9" />
+            <path d="M50,134 L66,150 L82,96 L72,124 Z"
+              fill="white" opacity="0.6" />
+            <path d="M184,110 L194,136 L202,120 L200,144 L184,126 L172,140 Z"
+              fill="white" opacity="0.55" />
+            {/* Facet lines */}
+            <line x1="82" y1="96" x2="74" y2="152" stroke="#8ECFE6" strokeWidth="1.2" opacity="0.5" />
+            <line x1="114" y1="56" x2="106" y2="130" stroke="#8ECFE6" strokeWidth="1.2" opacity="0.5" />
+            <line x1="50" y1="134" x2="42" y2="180" stroke="#8ECFE6" strokeWidth="1" opacity="0.4" />
+            <line x1="148" y1="116" x2="140" y2="170" stroke="#5E9AB5" strokeWidth="1" opacity="0.4" />
+            <line x1="184" y1="110" x2="176" y2="164" stroke="#5E9AB5" strokeWidth="1" opacity="0.4" />
+            {/* Glints */}
+            <ellipse cx="42" cy="120" rx="10" ry="4" fill="white" opacity="0.38" transform="rotate(-18 42 120)" />
+            <ellipse cx="162" cy="130" rx="8" ry="3" fill="white" opacity="0.26" transform="rotate(12 162 130)" />
           </svg>
         </div>
 

@@ -39,16 +39,17 @@ export async function finalizeDay(date: string): Promise<void> {
       .select('points_awarded')
       .eq('teammate_id', tm.id)
       .eq('task_date', date)
-    const points = ((completions ?? []) as { points_awarded: number }[])
+    const earned = ((completions ?? []) as { points_awarded: number }[])
       .reduce((s, c) => s + c.points_awarded, 0)
     const tmRequired = required.filter(t => t.teammate_id === tm.id)
     const tmCompleted = tmRequired.filter(t => t.is_completed).length
     const tmMissed = tmRequired.length - tmCompleted
+    const missedPoints = tmRequired.filter(t => !t.is_completed).reduce((s, t) => s + t.points, 0)
 
     statsRows.push({
       teammate_id: tm.id,
       stat_date: date,
-      points_earned: points,
+      points_earned: earned - missedPoints,
       total_required_tasks: tmRequired.length,
       completed_required_tasks: tmCompleted,
       missed_required_tasks: tmMissed,

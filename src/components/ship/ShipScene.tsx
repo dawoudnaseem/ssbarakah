@@ -36,10 +36,41 @@ export function ShipScene({ progress, isSunk }: ShipSceneProps) {
       ))}
 
       {/* Iceberg — right side, static threat */}
-      <div className="absolute animate-float" style={{ right: '4%', bottom: '28%', animationDelay: '1s' }}>
-        <svg width="80" height="100" viewBox="0 0 80 100" fill="none">
-          <polygon points="40,0 75,60 65,65 55,55 45,65 35,55 20,65 10,60" fill="#C8EAF8" opacity="0.9" />
-          <polygon points="20,65 10,60 5,100 75,100 75,60 65,65" fill="#9DD8F7" opacity="0.7" />
+      <div className="absolute animate-float" style={{ right: '4%', bottom: '30%', animationDelay: '1s', zIndex: 5 }}>
+        <svg width="110" height="120" viewBox="0 0 110 120" fill="none">
+          {/* === UNDERWATER MASS === */}
+          <ellipse cx="55" cy="102" rx="40" ry="16" fill="#1A5276" opacity="0.5" />
+
+          {/* === MAIN BODY (full silhouette) === */}
+          {/* Outline fill — base ice colour */}
+          <path d="M15,82 L8,66 L18,52 L28,60 L36,42 L44,56 L52,24 L60,44 L68,18 L76,38 L84,50 L94,62 L100,76 L92,82 Z"
+            fill="#A8D8EA" />
+
+          {/* Left face — lighter, lit side */}
+          <path d="M15,82 L8,66 L18,52 L28,60 L36,42 L44,56 L52,24 L60,44 L68,18 L64,34 L54,46 L46,28 L40,58 L30,46 L22,58 L18,74 Z"
+            fill="#D6EEF8" opacity="0.8" />
+
+          {/* Right face — darker, shadow side */}
+          <path d="M68,18 L76,38 L84,50 L94,62 L100,76 L92,82 L86,74 L78,62 L70,68 L62,54 Z"
+            fill="#6EA8C0" opacity="0.75" />
+
+          {/* === WATERLINE BAND === */}
+          <path d="M15,82 Q35,77 55,79 Q75,77 92,82 Q75,89 55,88 Q35,89 15,82 Z"
+            fill="#C5E8F5" opacity="0.65" />
+
+          {/* === SNOW CAP === */}
+          <path d="M52,24 L58,38 L64,28 L68,18 L60,32 L52,24 Z" fill="white" opacity="0.9" />
+          <path d="M36,42 L44,56 L52,24 L46,40 Z" fill="white" opacity="0.6" />
+
+          {/* === FACET LINES === */}
+          <line x1="52" y1="24" x2="46" y2="58" stroke="#8ECFE6" strokeWidth="0.9" opacity="0.55" />
+          <line x1="68" y1="18" x2="62" y2="54" stroke="#8ECFE6" strokeWidth="0.9" opacity="0.55" />
+          <line x1="36" y1="42" x2="30" y2="64" stroke="#8ECFE6" strokeWidth="0.7" opacity="0.4" />
+          <line x1="84" y1="50" x2="78" y2="68" stroke="#5E9AB5" strokeWidth="0.7" opacity="0.4" />
+
+          {/* === GLINT === */}
+          <ellipse cx="34" cy="54" rx="5" ry="2" fill="white" opacity="0.4" transform="rotate(-15 34 54)" />
+          <ellipse cx="76" cy="60" rx="3" ry="1.5" fill="white" opacity="0.25" transform="rotate(10 76 60)" />
         </svg>
       </div>
 

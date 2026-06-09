@@ -97,6 +97,14 @@ describe('calculateChad', () => {
     ]
     expect(calculateChad(stats)).toBe('b')
   })
+  it('prefers a teammate with higher net points (missed tasks subtract)', () => {
+    // Dawoud: earned 60, missed 60-pt task → net 0. Araf: earned 60, missed nothing → net 60.
+    const stats = [
+      baseStat({ teammate_id: 'dawoud', points_earned: 0,  completed_all_required: false, missed_required_tasks: 1 }),
+      baseStat({ teammate_id: 'araf',   points_earned: 60, completed_all_required: true,  missed_required_tasks: 0 }),
+    ]
+    expect(calculateChad(stats)).toBe('araf')
+  })
 })
 
 describe('calculateChud', () => {
