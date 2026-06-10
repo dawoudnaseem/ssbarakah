@@ -1161,3 +1161,80 @@ If a user closes their tab and the ship sinks while they're away, they will see 
 - `sinkTriggeredRef` is `false` on every fresh mount
 - `failureOverlayDismissed` is `false` on fresh mount (sessionStorage is cleared on tab close)
 - `fetchData` returns the sunk `daily_results` row immediately → animation triggers
+
+---
+
+## ✅ Task 18 — Final QA, Chad Badge Fix & Iceberg Redesign (2026-06-07)
+
+### Chad Badge Bug — Net Points System
+
+**Bug:** Dawoud (60 pts earned, 1 missed required task) was incorrectly beating Araf (60 pts earned, 0 missed tasks) for the Chad badge.
+
+**Root cause:** `points_earned` stored raw earned points. `calculateChad` sorted by `points_earned` descending, so a tie at 60 went to the lowest `teammate_id` alphabetically — which happened to be Dawoud.
+
+**Fix:** Net points = earned minus the sum of points on all missed required tasks. Applied in two places:
+
+1. **`src/lib/finalization.ts`** — at finalization time:
+   ```ts
+   const missedPoints = tmRequired.filter(t => !t.is_completed).reduce((s, t) => s + t.points, 0)
+   points_earned: earned - missedPoints
+   ```
+
+2. **`src/app/page.tsx`** — live leaderboard builder (before finalization):
+   ```tsx
+   const earned = completions.filter(c => c.teammate_id === tm.id).reduce((sum, c) => sum + c.points_awarded, 0)
+   const missedTasks = required.filter(t => !t.is_completed)
+   const missedPoints = missedTasks.reduce((sum, t) => sum + t.points, 0)
+   return { teammate: tm, points: earned - missedPoints, ... }
+   ```
+
+`calculateChad` itself was reverted to a simple `points_earned` descending sort — the fix lives in the data, not the comparator. `calculateChud` was unchanged.
+
+**New test in `src/__tests__/calculations.test.ts`:**
+```ts
+it('prefers a teammate with higher net points (missed tasks subtract)', () => {
+  const stats = [
+    baseStat({ teammate_id: 'dawoud', points_earned: 0,  completed_all_required: false, missed_required_tasks: 1 }),
+    baseStat({ teammate_id: 'araf',   points_earned: 60, completed_all_required: true,  missed_required_tasks: 0 }),
+  ]
+  expect(calculateChad(stats)).toBe('araf')
+})
+```
+
+All 51 tests pass. Net points can go negative if earned < sum of missed required task points — intentional, makes the penalty visible on the leaderboard.
+
+---
+
+### Iceberg Redesign — Multi-Peaked SVG
+
+Replaced the two-triangle icebergs with detailed cartoonish SVGs:
+- Jagged multi-peaked silhouette above waterline
+- Left lit face: `#D6EEF8` opacity 0.82; right shadow face: `#6EA8C0` opacity 0.72
+- Waterline shelf: `#C5E8F5` opacity 0.65
+- Snow caps (white), facet lines, glints
+- Underwater mass: mirrored jagged peaks pointing downward, `#0D1B35` with `#0A0F28` overlay — elongated ~2× relative to above-water height
+
+**Files changed:** `src/app/page.tsx` (both icebergs), `src/components/ship/ShipScene.tsx` (ShipScene iceberg, `zIndex: 5`)
+
+---
+
+### Large Iceberg — Responsive Sizing
+
+**Problem:** User set right iceberg to `width=600, height=1300` (viewBox `"0 0 300 650"`). At narrower viewports the iceberg sank below sea level because `height: auto` scales down the SVG while `bottom: %` stays fixed.
+
+**Final fix:**
+```tsx
+style={{ bottom: 'calc(9svh - min(600px, 106.15vw) * 1.434)', right: '-2%', zIndex: 1 }}
+<svg style={{ width: 'min(600px, 106.15vw)', height: 'auto' }} viewBox="0 0 300 650" fill="none">
+```
+
+**Math:** multiplier 1.434 = aspect_ratio × fraction_below_waterline = (650/300) × (430/650) = 2.167 × 0.662. This keeps the waterline pinned at `9svh` from scene bottom as SVG scales. `106.15vw = 92vw × (600/520)` means both ship and iceberg start shrinking at the same 565px viewport breakpoint.
+
+**Z-index layering:**
+| z | Element |
+|---|---|
+| 3 | Front wave |
+| 2 | Ship + small left iceberg |
+| 1 | Large right iceberg + back wave |
+
+Ship (z:2) appears in front of large iceberg (z:1) — bow overlaps ice face.
